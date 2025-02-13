@@ -230,7 +230,7 @@ def command_file_format_tool(
 llm = ChatOllama(model="llama3.1:8b", temperature = 0)
 
 
-agent_prompt = """
+crop_simulator_agent = """
 You are an AI assistant designed to help with Crop activities. 
 
 Use ONE tool per response. Format: {"name": "<tool_name>", "parameters": {}}.
@@ -257,7 +257,7 @@ def get_next_node(last_message: BaseMessage, goto: str):
 crop_simulator_agent = create_react_agent(
     llm,
     tools = [command_file_format_tool, weather_data_retrieve_tool, apsim_tool],
-    messages_modifier = agent_prompt
+    messages_modifier = crop_simulator_agent
 )
 
 # Node
@@ -283,14 +283,15 @@ graph = builder.compile()
 #display_graph(graph)
 
 prompt = """
-    Collect weather data  for the location of Tylisos with Latitude 35.513828, Longitude 24.018038
-    for the period starting from 2022-01-01 until 2025-01-01.
-    The Field parameters are:
-        Sand= 5.29, Silt= 20.78, Clay= 73.92, BD= 1.16, LL15= 0.16,
-        DUL= 0.36, SAT= 0.8, LL= 0.16, PH= 7.5, ESP= 0.25, 
-        CEC= 49.67, EC= 0.304, NO3 = [3.1,2.55], Carbon= 4.53,
-        cn_ratio= 7.44, StartAge= 1
-    Create a simulation for the Crop "Avocado"
+    1) Collect weather data  for the location of Tylisos with Latitude 35.513828, Longitude 24.018038
+       for the period starting from 2022-01-01 until 2025-01-01.
+       The Field parameters are:
+            Sand= 5.29, Silt= 20.78, Clay= 73.92, BD= 1.16, LL15= 0.16,
+            DUL= 0.36, SAT= 0.8, LL= 0.16, PH= 7.5, ESP= 0.25, 
+            CEC= 49.67, EC= 0.304, NO3 = [3.1,2.55], Carbon= 4.53,
+            cn_ratio= 7.44, StartAge= 1
+    2) Create a simulation for the Crop "Avocado" with these data.
+    
     Then Finish.
 
 """
