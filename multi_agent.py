@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from PIL import Image as PILImage
 from weather_data_retriever import OpenMeteoWeatherDownloader as openMeteoDataRetriever
 import re
+import math
 
 # Ignore all warnings
 warnings.filterwarnings("ignore")
@@ -163,6 +164,14 @@ def command_file_format_tool(
     csv_file = location + ".csv"
     ini_file = location + ".ini"
 
+    # ApsimX validation Checks
+    SAT_max = (1 - (BD/2.65))
+    # round SAT down to two decimals 
+    SAT_max = math.floor(SAT_max * 100) / 100.0
+
+    if(SAT > SAT_max):
+        SAT = SAT_max
+
     updates = {
         "[Clock].Start": start_date,
         "[Clock].End": end_date,
@@ -278,7 +287,7 @@ prompt = """
     for the period starting from 2022-01-01 until 2025-01-01.
     The Field parameters are:
         Sand= 5.29, Silt= 20.78, Clay= 73.92, BD= 1.16, LL15= 0.16,
-        DUL= 0.36, SAT= 0.56, LL= 0.16, PH= 7.5, ESP= 0.25, 
+        DUL= 0.36, SAT= 0.8, LL= 0.16, PH= 7.5, ESP= 0.25, 
         CEC= 49.67, EC= 0.304, NO3 = [3.1,2.55], Carbon= 4.53,
         cn_ratio= 7.44, StartAge= 1
     Create a simulation for the Crop "Avocado"
