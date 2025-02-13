@@ -48,38 +48,8 @@ def apsim_tool(crop: str):
     commands_file = r"C:\Users\vagga\Desktop\test_apsim_GUI\Python_Integration\APSIM_FILES\pear_commands"
 
     subprocess.run([apsim_exe, ' ','--apply', commands_file], check=True)
-
-    # Path to your .db file
-    db_path = r"C:\Users\vagga\Desktop\test_apsim_GUI\Python_Integration\APSIM_FILES\pears.db"
-
-    # Connect to the database
-    conn = sqlite3.connect(db_path)
-
-    # Specify the table you want to read
-    table_name = "Report"
-
-    # Read the table into a Pandas DataFrame
-    df = pd.read_sql_query(f"SELECT * FROM {table_name}", conn)
-
-    # keep only the date and the ammount of waterApplied
-    df = df[['Clock.Today', 'waterApplied']]
-
-    # remove the time from the date
-    df['Clock.Today'] = pd.to_datetime(df['Clock.Today']).dt.date
-
-    # Close the connection
-    conn.close()
-
-    # plt.plot(df['Clock.Today'], df['waterApplied'], marker='o', linestyle='-')
-
-    # plt.xlabel('Date')
-    # plt.ylabel('Water Applied (mm)')
-    # plt.title('Water Applied Over Time')
-
-    # #plt.xticks(rotation=45)  # Rotate for better readability
-    # plt.show()
-    # plt.close()
     print("Simulation Executed.")
+
     return "Simulation Executed."
     
 
@@ -226,11 +196,53 @@ def command_file_format_tool(
 
     return "Command File Formatted"
 
+@tool
+def data_extraction_tool(input_file: str):
+    """
+    This tool is responsible for extracting data given a .db file.
+    Can extract data like total water applied, total yield etc.
+
+    Args: 
+        input_file: The file from which the data will be extracted
+
+    """
+    # Path to your .db file
+    # db_path = r"C:\Users\vagga\Desktop\test_apsim_GUI\Python_Integration\APSIM_FILES\pears.db"
+    db_path = input_file
+    # Connect to the database
+    conn = sqlite3.connect(db_path)
+
+    # Specify the table you want to read
+    table_name = "Report"
+
+    # Read the table into a Pandas DataFrame
+    df = pd.read_sql_query(f"SELECT * FROM {table_name}", conn)
+
+    # keep only the date and the ammount of waterApplied
+    df = df[['Clock.Today', 'waterApplied']]
+
+    # remove the time from the date
+    df['Clock.Today'] = pd.to_datetime(df['Clock.Today']).dt.date
+
+    total_water_applied = df['waterApplied'].sum()
+    # Close the connection
+    conn.close()
+
+    # plt.plot(df['Clock.Today'], df['waterApplied'], marker='o', linestyle='-')
+
+    # plt.xlabel('Date')
+    # plt.ylabel('Water Applied (mm)')
+    # plt.title('Water Applied Over Time')
+
+    # #plt.xticks(rotation=45)  # Rotate for better readability
+    # plt.show()
+    # plt.close()
+    return total_water_applied
 
 llm = ChatOllama(model="llama3.1:8b", temperature = 0)
 
 
-crop_simulator_agent = """
+crop_simulator_agent_prompt = """
 You are an AI assistant designed to help with Crop activities. 
 
 Use ONE tool per response. Format: {"name": "<tool_name>", "parameters": {}}.
@@ -245,6 +257,16 @@ If you have the final answer or deliverable,"
 prefix your response with FINAL ANSWER so the team knows to stop."
 """
 
+simulation_analysis_agent_prompt = """
+You are an AI assistant designed to analyse the output of a crop simulation.
+Given the simulation output file, you can provide information about the Total yield of a crop,
+the Total amount of water applied etc.
+In order to extract data from files, you can use the tool: 'data_extraction_tool'
+
+If you have the final answer or deliverable,"
+prefix your response with FINAL ANSWER so the team knows to stop."
+"""
+
 
 def get_next_node(last_message: BaseMessage, goto: str):
     if "FINAL ANSWER" in last_message.content:
@@ -253,11 +275,17 @@ def get_next_node(last_message: BaseMessage, goto: str):
         return END
     return goto
 
-# Agent
+# Crop Simulator Agent
 crop_simulator_agent = create_react_agent(
     llm,
     tools = [command_file_format_tool, weather_data_retrieve_tool, apsim_tool],
-    messages_modifier = crop_simulator_agent
+    messages_modifier = crop_simulator_agent_prompt
+)
+
+simulation_analysis_agent = create_react_agent(
+    llm,
+    tools = [],
+    messages_modifier = simulation_analysis_agent_prompt
 )
 
 # Node
