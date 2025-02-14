@@ -42,8 +42,10 @@ def apsim_tool(crop: str):
     Uses the Apsimx simulation model in order to perform the simulation.
     """
     print("Inside Apsim Tool")
-    apsim_exe = r"c:\Users\vagga\Desktop\test_apsim_GUI\program\APSIM2025.1.7644.0\bin\Models.exe"
-    commands_file = r"C:\Users\vagga\Desktop\test_apsim_GUI\Python_Integration\APSIM_FILES\pear_commands"
+    # apsim_exe = r"c:\Users\vagga\Desktop\test_apsim_GUI\program\APSIM2025.1.7644.0\bin\Models.exe"
+    # commands_file = r"C:\Users\vagga\Desktop\test_apsim_GUI\Python_Integration\APSIM_FILES\pear_commands"
+    apsim_exe = r"/usr/local/lib/apsim/2025.2.7659.0/bin/Models"
+    commands_file = r"/home/eathanasakis/Intership/MultiAgent_Apsimx/APSIM_FILES/pear_commands"
     #output_dir = r"C:\Users\vagga\Desktop\test_apsim_GUI\Python_Integration\output" 
 
     subprocess.run([apsim_exe, ' ','--apply', commands_file], check=True)
@@ -67,8 +69,13 @@ def weather_data_retrieve_tool(location: str, latitude: float, longitude: float,
     print("\nWEATHER TOOL\n")
 
     # file Paths
-    csv_file_path = f"APSIM_FILES\{location}.csv"
-    ini_file_path = f"APSIM_FILES\{location}.ini"
+    # csv_file_path = f"APSIM_FILES\{location}.csv"
+    # ini_file_path = f"APSIM_FILES\{location}.ini"
+
+    csv_file_path = f"APSIM_FILES/{location}.csv"
+    ini_file_path = f"APSIM_FILES/{location}.ini"
+
+
 
 
     # files
@@ -200,7 +207,7 @@ def data_extraction_tool():
     Can extract data like: total water applied.
     """
     # Path to your .db file
-    db_path = r"C:\Users\vagga\Desktop\test_apsim_GUI\Python_Integration\APSIM_FILES\pears.db"
+    db_path = r"/home/eathanasakis/Intership/MultiAgent_Apsimx/APSIM_FILES/pears.db"
     #db_path = input_file
     # Connect to the database
     conn = sqlite3.connect(db_path)
@@ -224,7 +231,7 @@ def data_extraction_tool():
     print("\nTOTAL WATER: ",total_water_applied)
     return total_water_applied
 
-llm = ChatOllama(model="llama3.1:8b", temperature = 0)
+llm = ChatOllama(model="llama3.1:70b", temperature = 0)
 
 
 crop_simulator_agent_prompt = """
@@ -248,13 +255,6 @@ In order to extract data from files, you can use the tool: 'data_extraction_tool
 
 """
 
-
-# def get_next_node(last_message: BaseMessage, goto: str):
-#     if "FINAL ANSWER" in last_message.content:
-#         # Any agent decided the work is done
-#         print("\nFINAL ANSWEAR\n")
-#         return END
-#     return goto
 
 # Crop Simulator Agent
 crop_simulator_agent = create_react_agent(
@@ -333,5 +333,6 @@ messages = [HumanMessage(content=prompt)]
 messages = graph.invoke({'messages':messages})
 
 for m in messages["messages"]:
+    print("\n")
     m.pretty_print()
 
