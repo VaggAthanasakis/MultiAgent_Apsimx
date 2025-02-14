@@ -36,7 +36,6 @@ def display_graph(graph):
     plt.show()
 
 
-
 @tool
 def apsim_tool(crop: str):
     """
@@ -198,7 +197,7 @@ def command_file_format_tool(
 def data_extraction_tool():
     """
     This tool is responsible for extracting data given a .db file.
-    Can extract data like total water applied, total yield etc.
+    Can extract data like total water applied.
     """
     print("Data Extraction Tool")
     # Path to your .db file
@@ -232,12 +231,13 @@ def data_extraction_tool():
     # #plt.xticks(rotation=45)  # Rotate for better readability
     # plt.show()
     # plt.close()
+    print("WATER: ",total_water_applied)
     return total_water_applied
 
 
 
 # Create a Supervisor Agent
-members = ["crop_simulator","sumulation_analysis"]
+members = ["crop_simulator","simulation_analysis"]
 # Our team supervisor is an LLM node. It just picks the next agent to process
 # and decides when the work is completed
 options = members + ["FINISH"]
@@ -245,8 +245,8 @@ options = members + ["FINISH"]
 
 class Router(TypedDict):
     """Worker to route to next. If no workers needed, route to FINISH."""
-
     next: Literal[*options] # type: ignore
+
 
 llm = ChatOllama(model="llama3.1:8b", temperature = 0)
 
@@ -256,7 +256,7 @@ class State(MessagesState):
 
 def supervisor_node(state: State) -> Command[Literal[*members, "__end__"]]: # type: ignore
     
-        # Check for progress in the state
+    # Check for progress in the state
     progress = state.get("progress", [])
     progress_str = f"Completed tasks: {', '.join(progress)}." if progress else ""
     
@@ -266,7 +266,9 @@ def supervisor_node(state: State) -> Command[Literal[*members, "__end__"]]: # ty
         f"You have already completed the tasks: {progress_str} "
         "Given the conversation, output a JSON object with the key 'next' whose value is one of the following: "
         f"{members + ['FINISH']}. FINISH is outputed when all tasks have completed."
-
+        "If the progress contains worker: 'crop_simulator' YOU CANNOT ROUTE TO 'crop_simulator' AGAIN"
+        "If the progress contains worker: 'simulation_analysis' YOU CANNOT ROUTE TO 'simulation_analysis' AGAIN"
+        "If you cannot route anywhere, RETURN FINISH"        
 )
 
     print("\nPROGRESS: ",progress)
@@ -274,11 +276,14 @@ def supervisor_node(state: State) -> Command[Literal[*members, "__end__"]]: # ty
     messages = [{"role": "system", "content": updated_prompt}, ] + state["messages"]
 
     response = llm.with_structured_output(Router).invoke(messages)
-    print("STRUCTURED RESPONSE: ", response)
+    #print("STRUCTURED RESPONSE: ", response)
     if response is None:
-        raise ValueError("LLM did not return valid structured output. Response was None.")
-    
-    goto = response["next"]
+        print("NONEeeeeeeee\n")
+        goto = "FINISH"
+        #raise ValueError("LLM did not return valid structured output. Response was None.")
+    else:
+        goto = response["next"]
+
     print(f"\nSUpervisor NExt: {response}\n")
 
     if goto == "FINISH":
@@ -311,8 +316,7 @@ simulation_analysis_agent = create_react_agent(
     tools = [data_extraction_tool],
     messages_modifier = """
     You are an AI assistant designed to analyse the output of a crop simulation.
-    You can provide information about the Total yield of a crop,
-    the Total amount of water applied etc.
+    You can provide information about the Total amount of water applied.
     In order to extract data from files, you can use the tool: 'data_extraction_tool'
 
 """
@@ -332,7 +336,7 @@ def crop_simulator_agent_node(state: State) -> Command[Literal["supervisor"]]:
         goto="supervisor",
     )
 
-def sumulation_analysis_node(state: State) -> Command[Literal["supervisor"]]:
+def simulation_analysis_node(state: State) -> Command[Literal["supervisor"]]:
     result = simulation_analysis_agent.invoke(state)
     # Append that the weather retrieval is done
     new_progress = state.get("progress", []) + ["simulation_analysis"]
@@ -353,7 +357,7 @@ builder = StateGraph(State)
 builder.add_edge(START,"supervisor")
 builder.add_node("supervisor",supervisor_node)
 builder.add_node("crop_simulator",crop_simulator_agent_node)
-builder.add_node("sumulation_analysis",sumulation_analysis_node)
+builder.add_node("simulation_analysis",simulation_analysis_node)
 graph = builder.compile()
 
 
@@ -368,9 +372,10 @@ prompt = """
             CEC= 49.67, EC= 0.304, NO3 = [3.1,2.55], Carbon= 4.53,
             cn_ratio= 7.44, StartAge= 1
     2) Create a simulation for the Crop "Avocado" with these data.
-    3) Analyse the Data of the simulation.
-    
-    Then Finish."""
+    3) Analyse the Data of the simulation in order to output the total applied water.
+    4) Then Finish.
+    """
+
 messages = [HumanMessage(content=prompt)]
 
 messages = graph.invoke({'messages':messages, 'progress':[]})

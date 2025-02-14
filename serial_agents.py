@@ -86,7 +86,6 @@ def weather_data_retrieve_tool(location: str, latitude: float, longitude: float,
 
     return "Weather Data Acquired."
 
-
 @tool
 def command_file_format_tool(
     start_date: str, end_date: str, latitude: float, longitude: float,
@@ -222,15 +221,6 @@ def data_extraction_tool():
     # Close the connection
     conn.close()
 
-    # plt.plot(df['Clock.Today'], df['waterApplied'], marker='o', linestyle='-')
-
-    # plt.xlabel('Date')
-    # plt.ylabel('Water Applied (mm)')
-    # plt.title('Water Applied Over Time')
-
-    # #plt.xticks(rotation=45)  # Rotate for better readability
-    # plt.show()
-    # plt.close()
     print("\nTOTAL WATER: ",total_water_applied)
     return total_water_applied
 
@@ -248,9 +238,7 @@ The order of the tool execution MUST BE:
 Always call the tools with this order.
 command_file_format_tool MUST BE EXECUTED 
 If the user prompt requires a crop simulation, you must call the apsim_tool.
-
-If you have the final answer or deliverable,"
-prefix your response with FINAL ANSWER so the team knows to stop."
+DO not analyze the data of the simulation.
 """
 
 simulation_analysis_agent_prompt = """
@@ -258,17 +246,15 @@ You are an AI assistant designed to analyse the data of a crop simulation.
 You can provide information about the Total amount of water applied etc.
 In order to extract data from files, you can use the tool: 'data_extraction_tool'
 
-If you have the final answer or deliverable,"
-prefix your response with FINAL ANSWER so the team knows to stop."
 """
 
 
-def get_next_node(last_message: BaseMessage, goto: str):
-    if "FINAL ANSWER" in last_message.content:
-        # Any agent decided the work is done
-        print("\nFINAL ANSWEAR\n")
-        return END
-    return goto
+# def get_next_node(last_message: BaseMessage, goto: str):
+#     if "FINAL ANSWER" in last_message.content:
+#         # Any agent decided the work is done
+#         print("\nFINAL ANSWEAR\n")
+#         return END
+#     return goto
 
 # Crop Simulator Agent
 crop_simulator_agent = create_react_agent(
@@ -286,8 +272,7 @@ simulation_analysis_agent = create_react_agent(
 # Node
 def simulation_analysis_node(state: MessagesState) -> Command[Literal[END]]:
     result = simulation_analysis_agent.invoke(state)
-    goto = get_next_node(result["messages"][-1],END)
-    print("\nINSIDE SIM, GOTO= ",goto)
+
     result["messages"][-1] = HumanMessage(
         content=result["messages"][-1].content, name="simulation_analysis"
     )
@@ -295,14 +280,13 @@ def simulation_analysis_node(state: MessagesState) -> Command[Literal[END]]:
         update={
             "messages": result["messages"],
         },
-        goto=goto
+        goto=END
     )
 
 # Node
-def crop_simulator_node(state: MessagesState) -> Command[Literal[END,"simulation_analysis"]]:
+def crop_simulator_node(state: MessagesState) -> Command[Literal["simulation_analysis"]]:
     result = crop_simulator_agent.invoke(state)
-    goto = get_next_node(result["messages"][-1],"simulation_analysis")
-    print("\nINSIDE CROP, GOTO= ",goto)
+
     result["messages"][-1] = HumanMessage(
         content=result["messages"][-1].content, name="crop_simulator"
     )
@@ -310,7 +294,7 @@ def crop_simulator_node(state: MessagesState) -> Command[Literal[END,"simulation
         update={
             "messages": result["messages"],
         },
-        goto=goto
+        goto="simulation_analysis"
     )
 
 
