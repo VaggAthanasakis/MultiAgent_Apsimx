@@ -46,7 +46,7 @@ def display_graph(graph):
 
 
 @tool
-def apsim_tool(crop: str):
+def apsim_tool():
     """
     Creates a crop simulation about the development, the yield and the 
     irrigation demands of a spesific crop.
@@ -70,8 +70,8 @@ def apsim_tool(crop: str):
 def weather_data_retrieve_tool(location: str, latitude: float, longitude: float, start_date: str, end_date: str):
     """"
     Retrieve the weather data for a specific location
-    in a spesific period
-     Returns the weather file that is used to the apsim tool.
+    in a spesific period.
+    Returns the weather file that is used to the apsim tool.
 
 
     Args:
@@ -237,7 +237,6 @@ def data_extraction_tool(crop: str):
     # Path to your .db file
     #db_path = config.get("Paths", "db_path")
     db_path = config["Paths"]["db_path"].replace("{crop}",crop)
-    print("\n",db_path)
 
     # Connect to the database
     conn = sqlite3.connect(db_path)
@@ -257,7 +256,6 @@ def data_extraction_tool(crop: str):
     total_water_applied = df['waterApplied'].sum()
     # Close the connection
     conn.close()
-
 
     logger.info(f"Total Water Applied: {total_water_applied}")
     return total_water_applied

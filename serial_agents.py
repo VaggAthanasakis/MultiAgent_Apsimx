@@ -15,10 +15,21 @@ from PIL import Image as PILImage
 from weather_data_retriever import OpenMeteoWeatherDownloader as openMeteoDataRetriever
 import re
 import math
+import os
+import logging
+import configparser
 
 # Ignore all warnings
 warnings.filterwarnings("ignore")
 warnings.filterwarnings("ignore", category=RuntimeWarning, module="tkinter")
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+config = configparser.ConfigParser()
+config.read("ubuntu_config.ini")
+
 
 def display_graph(graph):
     image_data = graph.get_graph().draw_mermaid_png()
@@ -35,29 +46,32 @@ def display_graph(graph):
 
 
 @tool
-def apsim_tool(crop: str):
+def apsim_tool():
     """
     Creates a crop simulation about the development, the yield and the 
     irrigation demands of a spesific crop.
     Uses the Apsimx simulation model in order to perform the simulation.
+    Requires the output weather file of the tool weather_data_retrieve_tool in order to run.
     """
-    print("Inside Apsim Tool")
-    # apsim_exe = r"c:\Users\vagga\Desktop\test_apsim_GUI\program\APSIM2025.1.7644.0\bin\Models.exe"
-    # commands_file = r"C:\Users\vagga\Desktop\test_apsim_GUI\Python_Integration\APSIM_FILES\pear_commands"
-    apsim_exe = r"/usr/local/lib/apsim/2025.2.7659.0/bin/Models"
-    commands_file = r"/home/eathanasakis/Intership/MultiAgent_Apsimx/APSIM_FILES/pear_commands"
-    #output_dir = r"C:\Users\vagga\Desktop\test_apsim_GUI\Python_Integration\output" 
+    logger.info("Inside Apsim Tool")
 
-    subprocess.run([apsim_exe, ' ','--apply', commands_file], check=True)
+    apsim_exe = config.get("Paths", "apsim_exe")
+    commands_file = config.get("Paths", "commands_file")
 
-    return "SIMULATION PERFORMED"
+    try:
+        subprocess.run([apsim_exe, ' ','--apply', commands_file], check=True)
+        return "SIMULATION PERFORMED"
+    except subprocess.CalledProcessError as e:
+        logger.error(f"ApsimX Tool Failed: {e}")
+        raise
      
 
 @tool
 def weather_data_retrieve_tool(location: str, latitude: float, longitude: float, start_date: str, end_date: str):
     """"
     Retrieve the weather data for a specific location
-    in a spesific period
+    in a spesific period.
+    Returns the weather file that is used to the apsim tool.
 
     Args:
         location: The location for which the weather data will be retrieved
@@ -66,21 +80,13 @@ def weather_data_retrieve_tool(location: str, latitude: float, longitude: float,
         start_date: starting date of the period, FORMAT: YYYY-MM-DD
         end_date: ending date of the period, FORMAT: YYYY-MM-DD
     """
-    print("\nWEATHER TOOL\n")
+
+    logger.info("Inside Weather Tool")
 
     # file Paths
-    # csv_file_path = f"APSIM_FILES\{location}.csv"
-    # ini_file_path = f"APSIM_FILES\{location}.ini"
+    csv_file_path = config["Paths"]["weather_csv"].replace("{location}",location)
+    ini_file_path = config["Paths"]["weather_ini"].replace("{location}",location)
 
-    csv_file_path = f"APSIM_FILES/{location}.csv"
-    ini_file_path = f"APSIM_FILES/{location}.ini"
-
-
-
-
-    # files
-    csv_file = location + ".csv"
-    ini_file = location + ".ini"
 
     retriever = openMeteoDataRetriever(location=location,
                                       latitude=latitude,
@@ -91,7 +97,13 @@ def weather_data_retrieve_tool(location: str, latitude: float, longitude: float,
                                       ini_filename=ini_file_path)
     retriever.fetch_and_process()
 
+    # Ensure that the weather files have been created before returnig
+    while not (os.path.exists(csv_file_path) and os.path.exists(ini_file_path)):
+        logger.info("Sleeping")
+        time.sleep(0.1)
+
     return "Weather Data Acquired."
+    #return 
 
 @tool
 def command_file_format_tool(
@@ -99,12 +111,11 @@ def command_file_format_tool(
     sand: float, silt: float, clay: float, BD: float, LL15: float,
     DUL: float, SAT: float, LL: float, PH: float, ESP: float, CEC: float,
     EC: float, NO3: list, carbon: float, cn_ratio: float, start_age: int,
-    location: str                       
+    location: str, crop: str                        
     ):
     """
     This tool is used in order to modify the Command file.
     Modifies the Field Parameters for the simulation.
-    Must be the 1st tool that will be executed.
     MUST BE EXECUTED ONLY ONCE!!!
     
     Args:
@@ -129,11 +140,14 @@ def command_file_format_tool(
         cn_ratio: The soil carbon-to-nitrogen (C:N) ratio.
         start_age: The starting age of the crop from which the simulation begins.
         location: The location of the simulation.
+        crop: The crop that will be simulated
         
     """
     print("\nCommand TOOL\n")
 
-    command_file = r"APSIM_FILES/pear_commands"
+    #command_file = r"APSIM_FILES/pear_commands"
+    command_file = config.get("Paths","commands_file")
+
 
     csv_file = location + ".csv"
     ini_file = location + ".ini"
@@ -147,6 +161,7 @@ def command_file_format_tool(
         SAT = SAT_max
 
     updates = {
+        "load": crop,
         "[Clock].Start": start_date,
         "[Clock].End": end_date,
         "[Weather].FileName": csv_file,
@@ -174,7 +189,6 @@ def command_file_format_tool(
     }
     
 
-
     with open(command_file, "r") as file:
         lines = file.readlines()
 
@@ -186,10 +200,17 @@ def command_file_format_tool(
         for param, new_value in updates.items():
         # Build a regex pattern that matches the parameter name at the beginning of a line
         # (allowing for optional whitespace) and an equal sign with optional whitespace.
-            pattern = re.compile(r"^\s*" + re.escape(param) + r"\s*=\s*.*", re.IGNORECASE)
+            if param == "load":
+                pattern = re.compile(r"^\s*" + re.escape(param) + r"\s+.*\.apsimx", re.IGNORECASE)
+                replacement = f"{param} {new_value}.apsimx"
+            else:
+                pattern = re.compile(r"^\s*" + re.escape(param) + r"\s*=\s*.*", re.IGNORECASE)
+                replacement = f"{param} = {new_value}"   
+            
+           
             if pattern.match(updated_line):
               # Replace the entire line with the new parameter setting.
-                updated_line = f"{param} = {new_value}\n"
+                updated_line = replacement + "\n"
                # Once matched and updated, no need to check further parameters for this line.
                 break
         new_lines.append(updated_line)
@@ -199,15 +220,19 @@ def command_file_format_tool(
             file.writelines(new_lines)    
 
     return "Command File Formatted"
-
+    
 @tool
-def data_extraction_tool():
+def data_extraction_tool(crop: str):
     """
     This tool is responsible for extracting data from a .db file.
     Can extract data like: total water applied.
+    
+    Args:
+        crop: the crop that the simulation performed to.
     """
     # Path to your .db file
-    db_path = r"/home/eathanasakis/Intership/MultiAgent_Apsimx/APSIM_FILES/pears.db"
+    #db_path = r"/home/eathanasakis/Intership/MultiAgent_Apsimx/APSIM_FILES/pears.db"
+    db_path = config["Paths"]["db_path"].replace("{crop}",crop)
     #db_path = input_file
     # Connect to the database
     conn = sqlite3.connect(db_path)
@@ -239,8 +264,8 @@ You are an AI assistant designed to help with Crop activities.
 
 Use ONE tool per response. Format: {"name": "<tool_name>", "parameters": {}}.
 The order of the tool execution MUST BE:
-    1) command_file_format_tool (MUST BE EXECUTED ONLY ONCE)
-    2) weather_data_retrieve_tool
+    1) weather_data_retrieve_tool
+    2) command_file_format_tool (MUST BE EXECUTED ONLY ONCE)
     3) apsim_tool
 Always call the tools with this order.
 command_file_format_tool MUST BE EXECUTED 
@@ -315,7 +340,7 @@ prompt = """
             DUL= 0.36, SAT= 0.8, LL= 0.16, PH= 7.5, ESP= 0.25, 
             CEC= 49.67, EC= 0.304, NO3 = [3.1,2.55], Carbon= 4.53,
             cn_ratio= 7.44, StartAge= 1
-    2) Create a simulation for the Crop "Avocado" with these data.
+    2) Create a simulation for the Crop "avocado" with these data.
     3) Analyse the Data of the simulation in order to output the total applied water.
     4) Then Finish.
 

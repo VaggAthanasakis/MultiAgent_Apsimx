@@ -151,7 +151,7 @@ class OpenMeteoWeatherDownloader:
 
         # Save the final DataFrame to CSV
         final_df.to_csv(self.csv_filename, index=False)
-        print("CSV file saved:", self.csv_filename)
+        #print("CSV file saved:", self.csv_filename)
         #print(final_df)
 
         # Write location constants to an INI file
@@ -159,7 +159,7 @@ class OpenMeteoWeatherDownloader:
             file.write(f"location = {self.location}\n")
             file.write(f"latitude = {self.latitude}\n")
             file.write(f"longitude = {self.longitude}\n")
-        print("INI file saved:", self.ini_filename)
+        #print("INI file saved:", self.ini_filename)
 
         #return final_df
 

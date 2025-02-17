@@ -1,9 +1,9 @@
-load pears.apsimx
+load avocado.apsimx
 
 [Clock].Start = 2022-01-01
 [Clock].End = 2025-01-01
-[Weather].FileName = Tylisos.csv
-[Weather].ConstantsFile = Tylisos.ini
+[Weather].FileName = Heraklion.csv
+[Weather].ConstantsFile = Heraklion.ini
 
 [Soil].Latitude = 35.513828
 [Soil].Longitude = 24.018038
@@ -36,4 +36,5 @@ load pears.apsimx
 [TreeInitialisation].Script.StartAge = 1
 [TreeInitialisation].Script.SowingDate = 2022-01-01
 
-run 
+
+run
