@@ -69,7 +69,6 @@ def apsim_tool(start_date: str, end_date: str):
     # Command File Format will be moved here
     command_file_format_tool(start_date, end_date)
     
-    
     logger.info("Inside Apsim Tool")
 
     apsim_exe = config.get("Paths", "apsim_exe")
@@ -182,6 +181,7 @@ def data_extraction_tool(crop: str):
     """
 
     # Path to your .db file
+    logger.info("Inside Data Extraction Tool")
 
     db_path = config["Paths"]["db_path"].replace("{crop}",crop)
     # Connect to the database
@@ -209,7 +209,7 @@ def data_extraction_tool(crop: str):
 
 
 @tool
-def get_api_data(field_id: int):
+def get_api_data_tool(field_id: int):
     """
     This tool is used in order to retrieve data from an api endpoint.
     Retrieves data like: Field parameters (pH, NH4,...), Field location,
@@ -218,6 +218,7 @@ def get_api_data(field_id: int):
     Args:
         field_id: the id of the Field that the cultivation is taking place
     """
+    logger.info("Inside API Tool")
     # The file where the data will be stored
     full_json_data = config["Paths"]["api_data_file"].replace("{json_name}","full_data")
     clean_json_data = config["Paths"]["api_data_file"].replace("{json_name}","clean_data")
@@ -308,6 +309,7 @@ def command_file_format_tool(start_date: str, end_date: str):
         end_date: ending date of the period, FORMAT: YYYY-MM-DD.
         
     """
+    logger.info("Inside Command File Format")
     data_json_path = config["Paths"]["api_data_file"].replace("{json_name}", "clean_data")
     
     with open(data_json_path, "r") as file:
@@ -337,10 +339,6 @@ def command_file_format_tool(start_date: str, end_date: str):
     #crop = data_json.get("crop_type")
     crop = "pear"
 
-    logger.info("Inside Command Tool")
-
-    # command_file = r"APSIM_FILES/pear_commands"
-    
     commands_file = config.get("Paths", "commands_file")
 
     weather_csv = location + ".csv"
@@ -403,6 +401,8 @@ def command_file_format_tool(start_date: str, end_date: str):
                 pattern = re.compile(r"^\s*" + re.escape(param) + r"\s+.*\.apsimx", re.IGNORECASE)
                 replacement = f"{param} {new_value}.apsimx"
             else:
+                if new_value is None: ## Checking if we have a new value for this param
+                    continue
                 pattern = re.compile(r"^\s*" + re.escape(param) + r"\s*=\s*.*", re.IGNORECASE)
                 replacement = f"{param} = {new_value}"    
                 
@@ -480,14 +480,14 @@ def supervisor_node(state: State) -> Command[Literal[*members, "__end__"]]: # ty
 # Agents
 crop_simulator_agent = create_react_agent(
     llm,
-    tools=[command_file_format_tool, weather_data_retrieve_tool, get_sensor_data_tool, apsim_tool],
+    tools=[get_api_data_tool, weather_data_retrieve_tool, get_sensor_data_tool, apsim_tool],
     messages_modifier="""
     You are an AI assistant designed to help with Crop activities. 
 
     Use ONE tool per response. Format: {"name": "<tool_name>", "parameters": {}}.
     apsim_tool MUST BE EXECUTED LAST
     The order of the tool execution MUST BE:
-        1) get_api_data
+        1) get_api_data_tool
         2) weather_data_retrieve_tool
         3) get_sensor_data_tool
         4) apsim_tool
@@ -575,13 +575,10 @@ user_prompt = """
 
 """
 
-# messages = [HumanMessage(content=user_prompt)]
+messages = [HumanMessage(content=user_prompt)]
 
-# messages = graph.invoke({'messages':messages, 'progress':[]})
+messages = graph.invoke({'messages':messages, 'progress':[]})
 
-# for m in messages["messages"]:
-#     m.pretty_print()
+for m in messages["messages"]:
+    m.pretty_print()
 
-#get_api_data(field_id=62)
-#weather_data_retrieve_tool("2024-02-02", "2025-01-01")
-apsim_tool("2024-02-02", "2025-01-01")
