@@ -50,7 +50,7 @@ def display_graph(graph):
     plt.show()
 
 
-# @tool
+@tool
 def apsim_tool(start_date: str, end_date: str):
     """
     Creates a crop simulation about the development, the yield and the 
@@ -64,10 +64,8 @@ def apsim_tool(start_date: str, end_date: str):
         
     """
 
-    ##########
-    #
-    # Command File Format will be moved here
-    command_file_format_tool(start_date, end_date)
+    # Command File Format moved here
+    command_file_format(start_date, end_date)
     
     logger.info("Inside Apsim Tool")
 
@@ -80,14 +78,14 @@ def apsim_tool(start_date: str, end_date: str):
     except subprocess.CalledProcessError as e:
         logger.error(f"ApsimX Tool Failed: {e}")
         raise
-    
+
+
 @tool
 def weather_data_retrieve_tool(start_date: str, end_date: str):
     """"
     Retrieve the weather data for a specific location
-    in a spesific period
-     Returns the weather file that is used to the apsim tool.
-
+    in a specific period
+    Returns the weather file that is used to the apsim tool.
 
     Args:
         start_date: starting date of the period, FORMAT: YYYY-MM-DD
@@ -97,17 +95,18 @@ def weather_data_retrieve_tool(start_date: str, end_date: str):
     # Retrieve all the data needed from the api response
     data_json_path = config["Paths"]["api_data_file"].replace("{json_name}", "clean_data")
     
+    # Read the data from the api response file
     with open(data_json_path, "r") as file:
         data_json = json.load(file)
 
+    # get the information that is necessary 
     location = data_json.get("location")
     latitude = data_json.get("latitude")
     longitude = data_json.get("longitude")
 
-
     logger.info("Inside Weather Tool")
 
-    # file Paths
+    # file Paths for the weather files
     csv_file_path = config["Paths"]["weather_csv"].replace("{location}",location)
     ini_file_path = config["Paths"]["weather_ini"].replace("{location}",location)
 
@@ -147,15 +146,15 @@ def get_sensor_data_tool(crop: str):
     # Default sensor data if none provided
 
     sensor_data = [
-            ("2006-01-23", 0, 0.20),
-            ("2006-01-24", 1, 0.25),
-            ("2006-01-25", 2, 0.30),
-            ("2006-01-26", 0, 0.22),
-            ("2006-01-27", 1, 0.27),
-            ("2006-01-28", 2, 0.32),
-            ("2006-01-29", 0, 0.24),
-            ("2006-01-30", 1, 0.29),
-            ("2006-02-01", 2, 0.34)
+            ("2006-01-23", 0, 0.1),
+            ("2006-01-24", 1, 0.1),
+            ("2006-01-25", 2, 0.1),
+            ("2006-01-26", 0, 0.1),
+            ("2006-01-27", 1, 0.1),
+            ("2006-01-28", 2, 0.1),
+            ("2006-01-29", 0, 0.1),
+            ("2006-01-30", 1, 0.1),
+            ("2006-02-01", 2, 0.1)
         ]
     
     with open(sensor_data_file_path, "w") as txtfile:
@@ -264,7 +263,7 @@ def get_api_data_tool(field_id: int):
         latitude = None
 
     extracted_data = {
-        # Use get() without default to return None if keys are missing
+        # get() without default returns None if keys are missing
         "crop_type": data.get("croptype", {}).get("name"),
         "growth_type": data.get("croptype", {}).get("growth_type"),
         "longitude": longitude,
@@ -298,7 +297,7 @@ def get_api_data_tool(field_id: int):
 
 
 # helpfull functions
-def command_file_format_tool(start_date: str, end_date: str):
+def command_file_format(start_date: str, end_date: str):
     """
     This function is used in order to modify the Command file.
     Modifies the Field Parameters for the simulation.
