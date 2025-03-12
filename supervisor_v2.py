@@ -146,17 +146,38 @@ def get_sensor_data_tool(crop: str):
     # Default sensor data if none provided
 
     sensor_data = [
-            ("2006-01-23", 0, 0.1),
-            ("2006-01-24", 1, 0.1),
-            ("2006-01-25", 2, 0.1),
-            ("2006-01-26", 0, 0.1),
-            ("2006-01-27", 1, 0.1),
-            ("2006-01-28", 2, 0.1),
-            ("2006-01-29", 0, 0.1),
-            ("2006-01-30", 1, 0.1),
-            ("2006-02-01", 2, 0.1)
-        ]
-    
+        ("2024-08-1", 0, 0.1),
+        ("2024-08-2", 0, 0.1),
+        ("2024-08-3", 0, 0.1),
+        ("2024-08-4", 0, 0.1),
+        ("2024-08-5", 0, 0.1),
+        ("2024-08-6", 0, 0.1),
+        ("2024-08-7", 0, 0.1),
+        ("2024-08-8", 0, 0.1),
+        ("2024-08-9", 0, 0.1),
+        ("2024-08-10", 0, 0.1),
+        ("2024-08-11", 0, 0.1),
+        ("2024-08-12", 0, 0.1),
+        ("2024-08-13", 0, 0.1),
+        ("2024-08-14", 0, 0.1),
+        ("2024-08-15", 0, 0.1),
+        ("2024-08-16", 0, 0.1),
+        ("2024-08-17", 0, 0.1),
+        ("2024-08-18", 0, 0.1),
+        ("2024-08-19", 0, 0.1),
+        ("2024-08-20", 0, 0.1),
+        ("2024-08-21", 0, 0.1),
+        ("2024-08-22", 0, 0.1),
+        ("2024-08-23", 0, 0.1),
+        ("2024-08-24", 0, 0.1),
+        ("2024-08-25", 0, 0.1),
+        ("2024-08-26", 0, 0.1),
+        ("2024-08-27", 0, 0.1),
+        ("2024-08-28", 0, 0.1),
+        ("2024-08-29", 0, 0.1)
+    ]
+
+
     with open(sensor_data_file_path, "w") as txtfile:
         # Write header
         txtfile.write("Date,Layer,SW\n")
@@ -569,7 +590,7 @@ graph = builder.compile()
 
 # This will be the prompt that the user will give to the system from the frontend
 user_prompt = """
-    1) Create a simulation for the Crop "pear" in the field with id = 62 for the period starting from 2024-01-01 until 2025-01-01
+    1) Create a simulation for the Crop "pear" in the field with id = 61 for the period starting from 2025-03-14 until 2025-03-20
     2) Analyse the Data of the simulation in order to output the total applied water.
 
 """
