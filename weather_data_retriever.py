@@ -85,18 +85,18 @@ class OpenMeteoWeatherDownloader:
         
         # only historical
         if end_date <= current_date:
-            print("Only Historical Data")
+            # print("Only Historical Data")
             urls = [historical_url]
             params = [historical_params]
             historical_df = pd.DataFrame()
             dataframes_array = [historical_df]
         # only forecast
         elif start_date >= current_date:
-            print("Only Forecast")
+            # print("Only Forecast")
             difference = (end_date - current_date).days
             if difference > 14:
                 difference = 14
-            forecast_params["forecast_days"] = difference
+            forecast_params["forecast_days"] = difference + 1
             urls = [forcast_url]
             params = [forecast_params]
             forcast_df = pd.DataFrame()
@@ -106,15 +106,15 @@ class OpenMeteoWeatherDownloader:
             difference = (end_date - current_date).days
             if difference > 14:
                 difference = 14
-            forecast_params["forecast_days"] = difference
+            forecast_params["forecast_days"] = difference + 1
 
             self.end_date = datetime.now()
             self.end_date = self.end_date.strftime(("%Y-%m-%d"))
-            print(self.end_date)
+            # print(self.end_date)
             historical_params["end_date"] = self.end_date
 
-            print("HISTORICAL + FORECAST\n")
-            print(f"Days difference: {difference}")
+            # print("HISTORICAL + FORECAST\n")
+            # print(f"Days difference: {difference}")
             urls = [historical_url, forcast_url]
             params = [historical_params, forecast_params]
 
@@ -221,12 +221,12 @@ class OpenMeteoWeatherDownloader:
             dataframes_array[i] = merged_df[new_order]
 
         # delete the last element of the historical df because this day already exists in the forcast df
-        if(range(len(urls)) == 2):
-            print("Deleting duplicate")
+        if(len(urls) == 2):
+            #print("Deleting duplicate")
             dataframes_array[0].drop(dataframes_array[0].index[-1], inplace=True)
 
         # merge the 2 dataframes
-        print(dataframes_array)
+        #print(dataframes_array)
         final_df = pd.concat(dataframes_array, ignore_index=True)
 
         # Save the final DataFrame to CSV
@@ -239,7 +239,6 @@ class OpenMeteoWeatherDownloader:
             file.write(f"location = {self.location}\n")
             file.write(f"latitude = {self.latitude}\n")
             file.write(f"longitude = {self.longitude}\n")
-        #print("INI file saved:", self.ini_filename)
 
         #return final_df
 
