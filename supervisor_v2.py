@@ -256,10 +256,10 @@ def get_api_data_tool(field_id: int):
         with open(full_json_data, "w", encoding="utf-8") as file:
             json.dump(data, file, indent=4, ensure_ascii=False)
         print(f"Data saved to {full_json_data}")
-
+    
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data: {e}")
-
+    print("Here1")
     soil_analysis = {}
     for value in data["farmland"]["latest_soilanalysis"]["soilanalysis_values"]:
         #print("\nVALUE: ",value)
@@ -271,18 +271,18 @@ def get_api_data_tool(field_id: int):
         except (ValueError, TypeError):
             # Keep as string if conversion fails
             soil_analysis[prop_name] = value["value"]
-
+    print("Here2")
     # Safely get coordinates with try/except (to handle missing keys or indices)
     try:
         longitude = data["farmland"]["coordinates"]["coordinates"][0][0][0]
     except (KeyError, IndexError, TypeError):
         longitude = None
-
+    print("Here3")
     try:
         latitude = data["farmland"]["coordinates"]["coordinates"][0][0][1]
     except (KeyError, IndexError, TypeError):
         latitude = None
-
+    print("Here4")
     extracted_data = {
         # get() without default returns None if keys are missing
         "crop_type": data.get("croptype", {}).get("name"),
@@ -313,6 +313,7 @@ def get_api_data_tool(field_id: int):
         "location": "Heraklion",
 
     }
+    print("saving extracted data")
     with open(clean_json_data, "w", encoding="utf-8") as file:
         json.dump(extracted_data, file, indent=4, ensure_ascii=False)
 
@@ -590,7 +591,7 @@ graph = builder.compile()
 
 # This will be the prompt that the user will give to the system from the frontend
 user_prompt = """
-    1) Create a simulation for the Crop "pear" in the field with id = 61 for the period starting from 2025-03-14 until 2025-03-20
+    1) Create a simulation for the Crop "pear" in the field with id = 62 for the period starting from 2025-03-14 until 2025-03-20
     2) Analyse the Data of the simulation in order to output the total applied water.
 
 """

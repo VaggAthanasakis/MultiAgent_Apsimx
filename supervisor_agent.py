@@ -13,12 +13,14 @@ from langgraph.prebuilt import create_react_agent
 from PIL import Image as PILImage
 from io import BytesIO
 import matplotlib.pyplot as plt
+from datetime import datetime
 import os
 import re
 from weather_data_retriever import OpenMeteoWeatherDownloader as openMeteoDataRetriever
 import math
 import logging
 import configparser
+
 
 # Ignore all warnings
 warnings.filterwarnings("ignore")
@@ -88,8 +90,8 @@ def weather_data_retrieve_tool(location: str, latitude: float, longitude: float,
     csv_file_path = config["Paths"]["weather_csv"].replace("{location}",location)
     ini_file_path = config["Paths"]["weather_ini"].replace("{location}",location)
 
-    print("\n",csv_file_path)
-    print("\n",ini_file_path)
+    # print("\n",csv_file_path)
+    # print("\n",ini_file_path)
 
     retriever = openMeteoDataRetriever(location=location,
                                       latitude=latitude,
@@ -178,17 +180,19 @@ def command_file_format_tool(
         "[Physical].LL15[1:6]": LL15,
         "[Physical].DUL[1:6]": DUL,
         "[Physical].SAT[1:6]": SAT,
-        "[GrapevineSoil].LL[1:6]": LL,
+        "[PearSoil].LL[1:6]": LL,
         "[SlurpSoil].LL[1:6]": LL,
         "[Chemical].PH[1:6]": PH,
-        "[Chemical].ESP[1:6]": ESP,
-        "[Chemical].CEC[1:6]": CEC,
-        "[Chemical].EC[1:6]": EC,
+        "[Row].Soil.Chemical.ESP[1:6]": ESP,
+        "[Row].Soil.Chemical.CEC[1:6]": CEC,
+        "[Row].Soil.Chemical.EC[1:6]": EC,
         "[NO3].InitialValues[1:2]": ", ".join(map(str,NO3)),
         "[Organic].Carbon[1:2]": carbon,
         "[Organic].SoilCNRatio[1:6]":cn_ratio,
         "[TreeInitialisation].Script.StartAge": start_age,
-        "[TreeInitialisation].Script.SowingDate": start_date
+        "[TreeInitialisation].Script.SowingDate": start_date,
+        "[SoilWaterUpdate].Script.FilePath": config["Paths"]["soil_moisture_data"].replace("{crop}", crop)
+
     }
     
 
@@ -226,6 +230,48 @@ def command_file_format_tool(
 
     return "Command File Formatted"
 
+
+@tool
+def get_sensor_data_tool(crop: str):
+    """
+    This tool is used in order to gather sensor data from the field, like
+    soil moisture in various soil depths.
+    It stores the results into a file.
+    This tool must be executed everytime.
+    
+    Args:
+        crop: the crop that the simulation performed to.
+    """
+
+    logger.info("Inside sensor_data_tool")
+    sensor_data_file_path = config["Paths"]["soil_moisture_data"].replace("{crop}", crop)
+    #print("\n",sensor_data_file_path)
+    # Default sensor data if none provided
+
+    sensor_data = [
+            ("2006-01-23", 0, 0.20),
+            ("2006-01-24", 1, 0.25),
+            ("2006-01-25", 2, 0.30),
+            ("2006-01-26", 0, 0.22),
+            ("2006-01-27", 1, 0.27),
+            ("2006-01-28", 2, 0.32),
+            ("2006-01-29", 0, 0.24),
+            ("2006-01-30", 1, 0.29),
+            ("2006-02-01", 2, 0.34)
+        ]
+    
+    with open(sensor_data_file_path, "w") as txtfile:
+        # Write header
+        txtfile.write("Date,Layer,SW\n")
+        # Write each record
+        for record in sensor_data:
+            date_val, layer, sw = record
+            # If the date is a datetime object, convert it to a string in YYYY-MM-DD format.
+            if isinstance(date_val, datetime):
+                date_val = date_val.strftime("%Y-%m-%d")
+            txtfile.write(f"{date_val},{layer},{sw}\n")
+
+
 @tool
 def data_extraction_tool(crop: str):
     """
@@ -248,13 +294,14 @@ def data_extraction_tool(crop: str):
     # Read the table into a Pandas DataFrame
     df = pd.read_sql_query(f"SELECT * FROM {table_name}", conn)
 
-    # keep only the date and the ammount of waterApplied
+    # keep only the date and the amount of waterApplied
     df = df[['Clock.Today', 'waterApplied']]
 
     # remove the time from the date
     df['Clock.Today'] = pd.to_datetime(df['Clock.Today']).dt.date
 
     total_water_applied = df['waterApplied'].sum()
+    
     # Close the connection
     conn.close()
 
@@ -275,7 +322,7 @@ class Router(TypedDict):
     next: Literal[*options] # type: ignore
 
 
-llm = ChatOllama(model="llama3.1:70b", temperature = 0)
+llm = ChatOllama(model="llama3.3:latest", temperature = 0)
 
 class State(MessagesState):
     next: str
@@ -298,7 +345,7 @@ def supervisor_node(state: State) -> Command[Literal[*members, "__end__"]]: # ty
         "If you cannot route anywhere, RETURN FINISH"        
 )
 
-    print("\nPROGRESS: ",progress)
+    #print("\nPROGRESS: ",progress)
     
     messages = [{"role": "system", "content": updated_prompt}, ] + state["messages"]
 
@@ -321,17 +368,20 @@ def supervisor_node(state: State) -> Command[Literal[*members, "__end__"]]: # ty
 # Agents
 crop_simulator_agent = create_react_agent(
     llm,
-    tools=[command_file_format_tool, weather_data_retrieve_tool, apsim_tool],
+    tools=[command_file_format_tool, weather_data_retrieve_tool, get_sensor_data_tool, apsim_tool],
     messages_modifier="""
     You are an AI assistant designed to help with Crop activities. 
 
     Use ONE tool per response. Format: {"name": "<tool_name>", "parameters": {}}.
+    apsim_tool MUST BE EXECUTED LAST
     The order of the tool execution MUST BE:
         1) weather_data_retrieve_tool
-        2) command_file_format_tool (MUST BE EXECUTED ONLY ONCE)
-        3) apsim_tool
+        2) get_sensor_data_tool
+        3) command_file_format_tool (MUST BE EXECUTED ONLY ONCE)
+        4) apsim_tool
     Always call the tools with this order.
     command_file_format_tool MUST BE EXECUTED 
+    get_sensor_data_tool MUST BE EXECUTED EVERY TIME
     If the user prompt requires a crop simulation, you must call the apsim_tool.
     DO not analyze the data of the simulation.
 
@@ -379,7 +429,10 @@ def simulation_analysis_node(state: State) -> Command[Literal["supervisor"]]:
         goto="supervisor",
     )
 
+# water = data_extraction_tool("pear")
+# print("\nWATER ",water)
 
+#get_sensor_data_tool("avvvvvv")
 # Build the Graph
 builder = StateGraph(State)
 builder.add_edge(START,"supervisor")
@@ -394,15 +447,22 @@ graph = builder.compile()
 prompt = """
     Perform each one of the following tasks:
     1) Collect weather data  for the location of Heraklion with Latitude 35.513828, Longitude 24.018038
-       for the period starting from 2022-01-01 until 2025-01-01.
+       for the period starting from 2024-01-01 until 2025-01-01.
        The Field parameters are:
             Sand= 5.29, Silt= 20.78, Clay= 73.92, BD= 1.16, LL15= 0.16,
             DUL= 0.36, SAT= 0.8, LL= 0.16, PH= 7.5, ESP= 0.25, 
             CEC= 49.67, EC= 0.304, NO3 = [3.1,2.55], Carbon= 4.53,
             cn_ratio= 7.44, StartAge= 1
-    2) Create a simulation for the Crop "avocado" with these data.
+    2) Create a simulation for the Crop "Pear" with these data.
     3) Analyse the Data of the simulation in order to output the total applied water.
     4) Then Finish.
+
+"""
+
+# This will be the prompt that the user will give to the system from the frontend
+user_prompt = """
+    1) Create a simulation for the Crop "pear" for the period starting from 2024-01-01 until 2025-01-01
+    2) Analyse the Data of the simulation in order to output the total applied water.
 
 """
 
