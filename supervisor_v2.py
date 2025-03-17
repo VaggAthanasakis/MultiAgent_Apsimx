@@ -259,30 +259,56 @@ def get_api_data_tool(field_id: int):
     
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data: {e}")
-    print("Here1")
+    
     soil_analysis = {}
     for value in data["farmland"]["latest_soilanalysis"]["soilanalysis_values"]:
-        #print("\nVALUE: ",value)
+        
         prop_name = value["soilanalysis_property"]["name"].strip().lower()  # Normalize names
-        #print("\nPROP: ",prop_name)
+        
         try:
             # Convert values to float (if possible)
             soil_analysis[prop_name] = float(value["value"])
         except (ValueError, TypeError):
             # Keep as string if conversion fails
             soil_analysis[prop_name] = value["value"]
-    print("Here2")
+
+    # soil_analysis_values = data.get("farmland", {}).get("latest_soilanalysis", {}).get("soilanalysis_values", [])
+    # soil_analysis = {}
+    # for value in soil_analysis_values:
+    #     try:
+    #         # Safely get property name with fallbacks
+    #         prop_entry = value.get("soilanalysis_property", {})
+    #         prop_name = prop_entry.get("name", "").strip().lower()
+            
+    #         if not prop_name:
+    #             continue  # Skip entries without property name
+                
+    #         raw_value = value.get("value")
+            
+    #         # Try converting to float, fallback to original value
+    #         soil_analysis[prop_name] = float(raw_value) if raw_value is not None else None
+    #     except (ValueError, TypeError):
+    #         soil_analysis[prop_name] = raw_value
+
+    # # Set default values if no analysis found
+    # if not soil_analysis:
+    #     soil_analysis = {
+    #         "ph": 7.0,
+    #         "organic_matter": 2.5,
+    #         "phosphorus": 15.0,
+    #         "potassium": 150.0
+    #     }
     # Safely get coordinates with try/except (to handle missing keys or indices)
     try:
         longitude = data["farmland"]["coordinates"]["coordinates"][0][0][0]
     except (KeyError, IndexError, TypeError):
         longitude = None
-    print("Here3")
+    
     try:
         latitude = data["farmland"]["coordinates"]["coordinates"][0][0][1]
     except (KeyError, IndexError, TypeError):
         latitude = None
-    print("Here4")
+    
     extracted_data = {
         # get() without default returns None if keys are missing
         "crop_type": data.get("croptype", {}).get("name"),
@@ -591,7 +617,7 @@ graph = builder.compile()
 
 # This will be the prompt that the user will give to the system from the frontend
 user_prompt = """
-    1) Create a simulation for the Crop "pear" in the field with id = 62 for the period starting from 2025-03-14 until 2025-03-20
+    1) Create a simulation for the Crop "pear" in the field with id = 62 for the period starting from 2025-03-04 until 2025-03-20
     2) Analyse the Data of the simulation in order to output the total applied water.
 
 """

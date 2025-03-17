@@ -686,7 +686,7 @@
           "FileName": "Heraklion.csv",
           "ExcelWorkSheetName": "",
           "Latitude": 39.3614,
-          "Tav": 1.04303646875,
+          "Tav": 0.9720588235294119,
           "Amp": 0.0,
           "Name": "Weather",
           "ResourceName": null,
@@ -696,7 +696,7 @@
         },
         {
           "$type": "Models.Clock, Models",
-          "Start": "2025-03-14T00:00:00",
+          "Start": "2025-03-04T00:00:00",
           "End": "2025-03-20T00:00:00",
           "Name": "Clock",
           "ResourceName": null,
@@ -12595,7 +12595,7 @@
                 },
                 {
                   "Key": "SowingDate",
-                  "Value": "03/14/2025 00:00:00"
+                  "Value": "03/04/2025 00:00:00"
                 },
                 {
                   "Key": "VineDistance",
