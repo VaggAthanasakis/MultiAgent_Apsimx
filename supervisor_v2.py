@@ -315,9 +315,6 @@ def get_api_data_tool(field_id: int):
         "growth_type": data.get("croptype", {}).get("growth_type"),
         "longitude": longitude,
         "latitude": latitude,
-        "Altitude": data.get("farmland", {}).get("elevation"),
-        "Slope": data.get("farmland", {}).get("slope_lon"),
-        "SowingDate": data.get("sowing_date"),
         # Soil analysis values (will be None if keys don't exist)
         "Clay": soil_analysis.get("clay"),
         "Sand": soil_analysis.get("sand"),
@@ -335,10 +332,23 @@ def get_api_data_tool(field_id: int):
         "Carbon": 4.53,
         "SoilCNRatio": 7.44,
         "InitialCNR": 7.44,
-        "Start_Age": 1,
         "location": "Heraklion",
-
     }
+
+    # Check if we have a annual or a perennial crop
+    crop_type = data.get("croptype", {}).get("growth_type")
+    if(crop_type == "perennial"):
+        extracted_data.update({
+            "Start_Age": 1,
+            "Altitude": data.get("farmland", {}).get("elevation"),
+            "Slope": data.get("farmland", {}).get("slope_lon"),
+            "SowingDate": data.get("sowing_date"),
+        })
+    else:
+        # may need some more values here
+        pass
+
+
     print("saving extracted data")
     with open(clean_json_data, "w", encoding="utf-8") as file:
         json.dump(extracted_data, file, indent=4, ensure_ascii=False)
@@ -383,10 +393,7 @@ def command_file_format(start_date: str, end_date: str):
     carbon = data_json.get("Carbon")
     cn_ratio = data_json.get("SoilCNRatio")
     start_age = data_json.get("Start_Age")
-    #crop = data_json.get("crop_type")
-    crop = "pear"
-
-    commands_file = config.get("Paths", "commands_file")
+    crop = data_json.get("crop_type")
 
     weather_csv = location + ".csv"
     weather_ini = location + ".ini"
@@ -407,10 +414,6 @@ def command_file_format(start_date: str, end_date: str):
         "[Weather].ConstantsFile": weather_ini,
         "[Soil].Latitude": latitude,
         "[Soil].Longitude":longitude,
-        "[Row].Altitude":altitude,
-        "[Row].Slope": slope,
-        "[Alley].Altitude":altitude,
-        "[Alley].Slope": slope,
         "[Physical].ParticleSizeSand[1:6]": sand,
         "[Physical].ParticleSizeSilt[1:6]": silt,
         "[Physical].ParticleSizeClay[1:6]": clay,
@@ -418,20 +421,44 @@ def command_file_format(start_date: str, end_date: str):
         "[Physical].LL15[1:6]": LL15,
         "[Physical].DUL[1:6]": DUL,
         "[Physical].SAT[1:6]": SAT,
-        "[PearSoil].LL[1:6]": LL,
-        "[SlurpSoil].LL[1:6]": LL,
         "[Chemical].PH[1:6]": PH,
-        "[Row].Soil.Chemical.ESP[1:6]": ESP,
-        "[Row].Soil.Chemical.CEC[1:6]": CEC,
-        "[Row].Soil.Chemical.EC[1:6]": EC,
         "[NO3].InitialValues[1:2]": ", ".join(map(str,NO3)),
         "[Organic].Carbon[1:2]": carbon,
         "[Organic].SoilCNRatio[1:6]":cn_ratio,
-        "[TreeInitialisation].Script.StartAge": start_age,
-        "[TreeInitialisation].Script.SowingDate": start_date,
         "[SoilWaterUpdate].Script.FilePath": config["Paths"]["soil_moisture_data"].replace("{crop}", crop)
 
     }
+
+    growth_type = data_json.get("growth_type")
+    # check if wenhave a perennial crop
+    if(growth_type == "perennial"):
+        # load the proper commands_file
+        commands_file = config.get("Paths", "perennial_commands_file")
+        # perform the updates
+        updates.update({
+            "[Row].Altitude":altitude,
+            "[Row].Slope": slope,
+            "[Alley].Altitude":altitude,
+            "[Alley].Slope": slope,
+            "[Row].Soil.Chemical.ESP[1:6]": ESP,
+            "[Row].Soil.Chemical.CEC[1:6]": CEC,
+            "[Row].Soil.Chemical.EC[1:6]": EC,
+            f"[{crop}Soil].LL[1:6]": LL,
+            "[SlurpSoil].LL[1:6]": LL,
+            "[TreeInitialisation].Script.StartAge": start_age,
+            "[TreeInitialisation].Script.SowingDate": start_date,
+        })
+    # Else we have an annual crop
+    else:
+        # load the proper commands_file
+        commands_file = config.get("Paths", "annual_commands_file")
+        # perform the updates
+        updates.update({
+            "[Soil].Chemical.ESP[1:6]": ESP,
+            "[Soil].Chemical.CEC[1:6]": CEC,
+            "[Soil].Chemical.EC[1:6]": EC,
+            f"[{crop}Soil].LL[1:6]": LL,
+        })
     
     with open(commands_file, "r") as file:
         lines = file.readlines()
@@ -453,13 +480,22 @@ def command_file_format(start_date: str, end_date: str):
                 pattern = re.compile(r"^\s*" + re.escape(param) + r"\s*=\s*.*", re.IGNORECASE)
                 replacement = f"{param} = {new_value}"    
                 
-            
-            #pattern = re.compile(r"^\s*" + re.escape(param) + r"\s*=\s*.*", re.IGNORECASE)
             if pattern.match(updated_line):
               # Replace the entire line with the new parameter setting.
                 updated_line = replacement + "\n"
                # Once matched and updated, no need to check further parameters for this line.
                 break
+
+            # --- Special Handling for Crop-Specific Soil LL Parameter ---
+            # This regex captures any crop-specific LL parameter, e.g. [PearSoil].LL[1:6] = 0.16.
+            crop_ll_pattern = re.compile(r"^\s*\[([A-Za-z]+)Soil\]\.LL\[1:6\]\s*=\s*(.*)", re.IGNORECASE)
+            match_crop = crop_ll_pattern.match(updated_line)
+            if match_crop:
+                existing_crop = match_crop.group(1)  # Captured crop from the line.
+                # If the line does not belong to "Slurp" and is not already the current crop,
+                # update it to use the current crop.
+                if existing_crop.lower() != "slurp" and existing_crop.lower() != crop.lower():
+                    updated_line = f"[{crop}Soil].LL[1:6] = {LL}\n"
         new_lines.append(updated_line)
 
         # Write the updated lines back to the file (or to a new file if preferred)
