@@ -354,6 +354,15 @@ def get_api_data_tool(field_id: int):
         json.dump(extracted_data, file, indent=4, ensure_ascii=False)
 
 
+@tool
+def get_time():
+    """
+    This tool is responsible for returning the current 
+    date in the format of yyyy-mm-dd
+
+    """
+    return datetime.now.strftime("%Y-%m-%d")
+
 # helpfull functions
 def command_file_format(start_date: str, end_date: str):
     """
@@ -506,7 +515,7 @@ def command_file_format(start_date: str, end_date: str):
 
 
 # Create a Supervisor Agent
-members = ["crop_simulator","simulation_analysis"]
+members = ["crop_simulator","simulation_analysis","advisor"]
 # Our team supervisor is an LLM node. It just picks the next agent to process
 # and decides when the work is completed
 options = members + ["FINISH"]
@@ -593,6 +602,29 @@ simulation_analysis_agent = create_react_agent(
 
 """
 )
+
+advisor_agent = create_react_agent(
+    llm,
+    tools = [weather_data_retrieve_tool, get_sensor_data_tool, get_time],
+    messages_modifier = """
+    You are a professinal AI assistant designed to give advice for a specific 
+    crop. You can give advice for the water irrigation demands and for the weather.
+    In order to gain data for the soil humidity for the specific crop, you can gain soil
+    humidity values from the tool 'get_sensor_data_tool'.
+    In order to gain weather forecast for the next days, you can call the tool 'weather_data_retrieve_tool'.
+    In order to find the current date, use the tool 'get_time'
+    
+    You have to reason for this data.
+    + Check the humidity values of the soil and if you think that there is not enough water in the soil as an advice
+      to the farmer for how much water he has to apply.
+    + Check the weather forecast, starting from the current date, for the next 7 days in order to find out the amount 
+      of the rain (mm) that is expected to be dropped.
+    + Combine the soil humidity values with the weather forecast and synthesize a response like a mini advice 
+      to the farmer about the amount of water (in mm) that he has to apply to the field, if needed.
+
+"""
+)
+
 # graph nodes
 def crop_simulator_agent_node(state: State) -> Command[Literal["supervisor"]]:
     result = crop_simulator_agent.invoke(state)
@@ -623,6 +655,21 @@ def simulation_analysis_node(state: State) -> Command[Literal["supervisor"]]:
         goto="supervisor",
     )
 
+def advisor_agent_node(state: State) -> Command[Literal["supervisor"]]:
+    result = advisor_agent.invoke(state)
+    # Append that the weather retrieval is done
+    new_progress = state.get("progress", []) + ["advisor"]
+   
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(content=result["messages"][-1].content, name="advisor")
+            ],
+            "progress": new_progress,
+        },
+        goto="supervisor",
+    )
+
 # water = data_extraction_tool("pear")
 
 # Build the Graph
@@ -631,25 +678,13 @@ builder.add_edge(START,"supervisor")
 builder.add_node("supervisor",supervisor_node)
 builder.add_node("crop_simulator",crop_simulator_agent_node)
 builder.add_node("simulation_analysis",simulation_analysis_node)
+builder.add_node("advisor",advisor_agent_node)
 graph = builder.compile()
 
 
 #display_graph(graph)
 
-# prompt = """
-#     Perform each one of the following tasks:
-#     1) Collect weather data  for the location of Heraklion with Latitude 35.513828, Longitude 24.018038
-#        for the period starting from 2024-01-01 until 2025-01-01.
-#        The Field parameters are:
-#             Sand= 5.29, Silt= 20.78, Clay= 73.92, BD= 1.16, LL15= 0.16,
-#             DUL= 0.36, SAT= 0.8, LL= 0.16, PH= 7.5, ESP= 0.25, 
-#             CEC= 49.67, EC= 0.304, NO3 = [3.1,2.55], Carbon= 4.53,
-#             cn_ratio= 7.44, StartAge= 1
-#     2) Create a simulation for the Crop "Pear" with these data.
-#     3) Analyse the Data of the simulation in order to output the total applied water.
-#     4) Then Finish.
 
-# """
 
 # This will be the prompt that the user will give to the system from the frontend
 user_prompt = """
