@@ -653,7 +653,7 @@ graph = builder.compile()
 
 # This will be the prompt that the user will give to the system from the frontend
 user_prompt = """
-    1) Create a simulation for the Crop "pear" in the field with id = 62 for the period starting from 2025-03-04 until 2025-03-20
+    1) Create a simulation in the field with id = 62 for the period starting from 2025-03-04 until 2025-03-20
     2) Analyse the Data of the simulation in order to output the total applied water.
 
 """
