@@ -1,0 +1,45 @@
+load Pear.apsimx
+
+[Clock].Start = 2025-03-04
+[Clock].End = 2025-03-20
+[Weather].FileName = Heraklion.csv
+[Weather].ConstantsFile = Heraklion.ini
+
+[Soil].Latitude = 39.3614
+[Soil].Longitude = 22.093
+
+[Physical].ParticleSizeSand[1:6] = 20
+[Physical].ParticleSizeSilt[1:6] = 70
+[Physical].ParticleSizeClay[1:6] = 10
+[Physical].BD[1:6] = 1.16
+[Physical].LL15[1:6] = 0.16
+[Physical].DUL[1:6] = 0.36
+[Physical].SAT[1:6] = 0.56
+
+[PearSoil].LL[1:6] = 0.16
+[SlurpSoil].LL[1:6] = 0.16
+
+[Chemical].PH[1:6] = 7.0
+[Row].Soil.Chemical.ESP[1:6] = 0.25
+[Row].Soil.Chemical.CEC[1:6] = 49.67
+[Row].Soil.Chemical.EC[1:6] = 0.304
+[Row].Altitude = 105.0
+[Row].Slope = 0.0
+[Alley].Altitude = 105.0
+[Alley].Slope = 0.0
+
+
+[NO3].InitialValues[1:2] = 3.1, 2.55
+
+[Organic].Carbon[1:2] = 4.53
+[Organic].SoilCNRatio[1:6] = 7.44
+
+[SurfaceOrganicMatter].InitialCNR = 7.44
+
+
+[TreeInitialisation].Script.StartAge = 1
+[TreeInitialisation].Script.SowingDate = 2025-03-04
+
+[SoilWaterUpdate].Script.FilePath = /home/eathanasakis/Intership/MultiAgent_Apsimx/APSIM_FILES/pear_soil_moisture_data.txt
+
+run
