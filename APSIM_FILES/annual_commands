@@ -1,4 +1,4 @@
-load Potato.apsimx
+load Wheat.apsimx
 
 [Clock].Start = 2025-03-04
 [Clock].End = 2025-03-20
@@ -16,7 +16,7 @@ load Potato.apsimx
 [Physical].DUL[1:6] = 0.36
 [Physical].SAT[1:6] = 0.56
 
-[PotatoSoil].LL[1:6] = 0.28
+[WheatSoil].LL[1:6] = 0.28
 
 [Chemical].PH[1:6] = 7.0
 [Soil].Chemical.ESP[1:6] = 0.25

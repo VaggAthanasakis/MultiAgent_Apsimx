@@ -13,7 +13,7 @@ from langgraph.prebuilt import create_react_agent
 from PIL import Image as PILImage
 from io import BytesIO
 import matplotlib.pyplot as plt
-from datetime import datetime
+from datetime import datetime, time
 import os
 import re
 from weather_data_retriever import OpenMeteoWeatherDownloader as openMeteoDataRetriever
@@ -68,7 +68,8 @@ def apsim_tool(start_date: str, end_date: str, crop_type: str):
     # Command File Format moved here
     command_file_format(start_date, end_date)
     
-    logger.info("Inside Apsim Tool")
+    #logger.info("Inside Apsim Tool")
+    print("\nInside Apsim Tool")
 
     apsim_exe = config.get("Paths", "apsim_exe")
 
@@ -99,6 +100,9 @@ def weather_data_retrieve_tool(start_date: str, end_date: str):
     Returns:
         total_rain: the total amount of rain for that period
     """
+        #logger.info("Inside Weather Tool")
+    print("\nInside Weather Tool")
+    print(f"start: {start_date}, end: {end_date}")
 
     # Retrieve all the data needed from the api response
     data_json_path = config["Paths"]["api_data_file"].replace("{json_name}", "clean_data")
@@ -112,7 +116,7 @@ def weather_data_retrieve_tool(start_date: str, end_date: str):
     latitude = data_json.get("latitude")
     longitude = data_json.get("longitude")
 
-    logger.info("Inside Weather Tool")
+
 
     # file Paths for the weather files
     csv_file_path = config["Paths"]["weather_csv"].replace("{location}",location)
@@ -150,8 +154,9 @@ def get_sensor_data_tool(crop: str):
         crop_type: returns the crop type 'annual' or 'perennial' 
     """
     crop = crop.capitalize()
-    print(f"CROP: {crop}")
-    logger.info("Inside sensor_data_tool")
+    print(f"\nCROP: {crop}")
+    #logger.info("Inside sensor_data_tool")
+    print("\nInside sensor_data_tool")
     sensor_data_file_path = config["Paths"]["soil_moisture_data"].replace("{crop}", crop)
     #print("\n",sensor_data_file_path)
     # Default sensor data if none provided
@@ -196,7 +201,8 @@ def data_extraction_tool(crop: str):
     """
 
     # Path to your .db file
-    logger.info("Inside Data Extraction Tool")
+    #logger.info("Inside Data Extraction Tool")
+    print("\nInside Data Extraction Tool")
 
     crop = crop.capitalize()
     db_path = config["Paths"]["db_path"].replace("{crop}",crop)
@@ -220,7 +226,8 @@ def data_extraction_tool(crop: str):
     # Close the connection
     conn.close()
 
-    logger.info(f"Total Water Applied: {total_water_applied}")
+    #logger.info(f"Total Water Applied: {total_water_applied}")
+    print(f"\nTotal Water Applied: {total_water_applied}")
     return total_water_applied
 
 
@@ -236,7 +243,8 @@ def get_api_data_tool(field_id: int):
     Returns:
         crop: the crop name 
     """
-    logger.info("Inside API Tool")
+    #logger.info("Inside API Tool")
+    print("\nInside API Tool")
     # The file where the data will be stored
     full_json_data = config["Paths"]["api_data_file"].replace("{json_name}","full_data")
     clean_json_data = config["Paths"]["api_data_file"].replace("{json_name}","clean_data")
@@ -349,7 +357,7 @@ def get_api_data_tool(field_id: int):
         pass
 
 
-    print("saving extracted data")
+    print("\nSaving extracted data")
     with open(clean_json_data, "w", encoding="utf-8") as file:
         json.dump(extracted_data, file, indent=4, ensure_ascii=False)
 
@@ -363,8 +371,9 @@ def get_time():
     date in the format of yyyy-mm-dd
 
     """
-    logger.info("Inside get_time Tool")
-    current_date = datetime.now.strftime("%Y-%m-%d")
+    #logger.info("Inside get_time Tool")
+    print("\nInside get_time Tool")
+    current_date = datetime.now().strftime("%Y-%m-%d")
     print(current_date)
     return current_date
 
@@ -380,7 +389,8 @@ def command_file_format(start_date: str, end_date: str):
         end_date: ending date of the period, FORMAT: YYYY-MM-DD.
         
     """
-    logger.info("Inside Command File Format")
+    #logger.info("Inside Command File Format")
+    print("\nInside Command File Format")
     data_json_path = config["Paths"]["api_data_file"].replace("{json_name}", "clean_data")
     
     with open(data_json_path, "r") as file:
@@ -607,25 +617,61 @@ simulation_analysis_agent = create_react_agent(
 """
 )
 
+# advisor_agent = create_react_agent(
+#     llm,
+#     tools = [weather_data_retrieve_tool, get_sensor_data_tool, get_time],
+#     messages_modifier = """
+#     You are a professinal AI assistant designed to give advice for a specific 
+#     crop. You can give advice for the water irrigation demands and for the weather.
+#     In order to gain data for the soil humidity for the specific crop, you can gain soil
+#     humidity values from the tool 'get_sensor_data_tool'.
+#     In order to gain weather forecast for the next days, you can call the tool 'weather_data_retrieve_tool'.
+#     Just call the weather_data_retrieve_tool with starting day: current_date and end_day: 7 days after that.
+#     In order to find the current_date, use the tool 'get_time'
+#     Use ONE tool per response. Format: {"name": "<tool_name>", "parameters": {}}.
+    
+    
+#     Instructions: in order to give advice for a field you have to call the tools with this order ALWAYS:
+#         1) get_time
+#         2) weather_data_retrieve_tool (args: start_date=current_date end_date: current_date + 7)
+#         3) get_sensor_data_tool
+
+#     IT IS HIGHLY IMPORTANT TO CALL THE TOOL weather_data_retrieve_tool. IT IS MANDATORY to use the
+#     output of the get_time tool (current_date) as the start_date argument of the weather_data_retrieve tool
+
+#     Aftef that you have to reason for this data.
+#     + Check the humidity values of the soil and if you think that there is not enough water in the soil as an advice
+#       to the farmer for how much water he has to apply.
+#     + Check the weather forecast, starting from the current date, for the next 7 days in order to find out the amount 
+#       of the rain (mm) that is expected to be dropped.
+#     + Combine the soil humidity values with the weather forecast and synthesize a response like a mini advice 
+#       to the farmer about the amount of water (in mm) that he has to apply to the field, if needed.
+
+# """
+# )
 advisor_agent = create_react_agent(
     llm,
-    tools = [weather_data_retrieve_tool, get_sensor_data_tool, get_time],
-    messages_modifier = """
-    You are a professinal AI assistant designed to give advice for a specific 
-    crop. You can give advice for the water irrigation demands and for the weather.
-    In order to gain data for the soil humidity for the specific crop, you can gain soil
-    humidity values from the tool 'get_sensor_data_tool'.
-    In order to gain weather forecast for the next days, you can call the tool 'weather_data_retrieve_tool'.
-    In order to find the current date, use the tool 'get_time'
-    
-    You have to reason for this data.
-    + Check the humidity values of the soil and if you think that there is not enough water in the soil as an advice
-      to the farmer for how much water he has to apply.
-    + Check the weather forecast, starting from the current date, for the next 7 days in order to find out the amount 
-      of the rain (mm) that is expected to be dropped.
-    + Combine the soil humidity values with the weather forecast and synthesize a response like a mini advice 
-      to the farmer about the amount of water (in mm) that he has to apply to the field, if needed.
+    tools=[weather_data_retrieve_tool, get_sensor_data_tool, get_time],
+    messages_modifier="""
+You are a professional AI assistant designed to give advice for a specific crop.
+You provide irrigation and weather recommendations based on soil humidity and weather forecast.
 
+You have access to the following tools:
+- get_time: Returns the current date in YYYY-MM-DD format.
+- weather_data_retrieve_tool: Retrieves the total rain (in mm) forecasted. It requires a starting date and an ending date. If the ending date is not provided, it computes the date 7 days after the starting date.
+- get_sensor_data_tool: Returns the soil humidity value.
+
+Instructions:
+1) Always start by calling get_time to get the current date (store this as "current_date").
+2) Next, call weather_data_retrieve_tool using current_date as the start_date and end_date start_date + 7 days.
+3) Finally, call get_sensor_data_tool to get the soil humidity.
+
+After obtaining the data, analyze:
+- If the soil humidity is low and little rain is forecasted, advise the farmer on applying additional water (in mm).
+- Otherwise, advise that no extra irrigation is needed.
+
+Remember: Use ONE tool call per response. Format your tool call as: {"name": "<tool_name>", "parameters": {}}.
+Also, it is HIGHLY IMPORTANT that when calling weather_data_retrieve_tool, you use the output of get_time (current_date) as its start_date.
 """
 )
 
@@ -691,12 +737,16 @@ graph = builder.compile()
 
 
 # This will be the prompt that the user will give to the system from the frontend
-user_prompt = """
-    1) Create a crop simulation in the field with id = 62 for the period starting from 2025-03-04 until 2025-03-20
-    2) Analyse the Data of the simulation in order to output the total applied water.
-    3) Give some advice for the crop.
+# user_prompt = """
+#     1) Create a crop simulation in the field with id = 62 for the period starting from 2025-03-04 until 2025-03-20
+#     2) Analyse the Data of the simulation in order to output the total applied water.
+#     3) Give some advice for the crop.
 
+# """
+user_prompt = """
+    give advice for a field starting from today and for the next 7 days
 """
+
 
 messages = [HumanMessage(content=user_prompt)]
 
