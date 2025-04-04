@@ -12,8 +12,8 @@
       "Children": [
         {
           "$type": "Models.Clock, Models",
-          "Start": "1999-01-01T00:00:00",
-          "End": "2000-12-31T00:00:00",
+          "Start": "2025-03-04T00:00:00",
+          "End": "2025-03-20T00:00:00",
           "Name": "Clock",
           "ResourceName": null,
           "Children": [],
@@ -31,12 +31,12 @@
         },
         {
           "$type": "Models.Climate.Weather, Models",
-          "ConstantsFile": null,
-          "FileName": "%root%/Examples/WeatherFiles/AU_Dalby.met",
+          "ConstantsFile": "/home/eathanasakis/Intership/MultiAgent_Apsimx/APSIM_FILES/Heraklion.ini",
+          "FileName": "Heraklion.csv",
           "ExcelWorkSheetName": "",
-          "Latitude": -27.18,
-          "Tav": 19.09,
-          "Amp": 14.63,
+          "Latitude": 39.3614,
+          "Tav": 0.9705882352941176,
+          "Amp": 0.0,
           "Name": "Weather",
           "ResourceName": null,
           "Children": [],
@@ -139,8 +139,8 @@
               "Country": "Australia",
               "NaturalVegetation": "Qld. Bluegrass, possible Qld. Blue gum",
               "ApsoilNumber": "900",
-              "Latitude": -27.581836,
-              "Longitude": 151.320206,
+              "Latitude": 39.3614,
+              "Longitude": 22.093,
               "LocationAccuracy": " +/- 20m",
               "YearOfSampling": "0",
               "DataSource": "CSIRO Sustainable Ecosystems, Toowoomba; Characteriesd as part of the GRDC funded project\"Doing it better, doing it smarter, managing soil water in Australian agriculture' 2011",
@@ -159,18 +159,50 @@
                     300.0,
                     300.0
                   ],
-                  "ParticleSizeSand": null,
-                  "ParticleSizeSilt": null,
-                  "ParticleSizeClay": null,
-                  "Rocks": null,
+                  "ParticleSizeSand": [
+                    20.0,
+                    20.0,
+                    20.0,
+                    20.0,
+                    20.0,
+                    20.0,
+                    5.0
+                  ],
+                  "ParticleSizeSilt": [
+                    70.0,
+                    70.0,
+                    70.0,
+                    70.0,
+                    70.0,
+                    70.0,
+                    65.0
+                  ],
+                  "ParticleSizeClay": [
+                    10.0,
+                    10.0,
+                    10.0,
+                    10.0,
+                    10.0,
+                    10.0,
+                    30.0
+                  ],
+                  "Rocks": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "Texture": null,
                   "BD": [
-                    1.01056473311131,
-                    1.07145631083388,
-                    1.09393858528057,
-                    1.15861335018721,
-                    1.17301160318016,
-                    1.16287303586874,
+                    1.16,
+                    1.16,
+                    1.16,
+                    1.16,
+                    1.16,
+                    1.16,
                     1.18749547755906
                   ],
                   "AirDry": [
@@ -183,8 +215,8 @@
                     0.28
                   ],
                   "LL15": [
-                    0.260500109036505,
-                    0.248361738469248,
+                    0.28,
+                    0.28,
                     0.28,
                     0.28,
                     0.28,
@@ -192,21 +224,21 @@
                     0.28
                   ],
                   "DUL": [
-                    0.52100021807301,
-                    0.496723476938497,
-                    0.488437607673005,
-                    0.480296969355493,
-                    0.471583596524955,
-                    0.457070570557793,
+                    0.36,
+                    0.36,
+                    0.36,
+                    0.36,
+                    0.36,
+                    0.36,
                     0.452331759845006
                   ],
                   "SAT": [
-                    0.588654817693846,
-                    0.565676863836273,
-                    0.557192986686577,
-                    0.532787415023694,
-                    0.527354112007486,
-                    0.531179986464627,
+                    0.56,
+                    0.56,
+                    0.56,
+                    0.56,
+                    0.56,
+                    0.56,
                     0.521888499034317
                   ],
                   "KS": [
@@ -224,23 +256,55 @@
                   "DULMetadata": null,
                   "SATMetadata": null,
                   "KSMetadata": null,
-                  "RocksMetadata": null,
+                  "RocksMetadata": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                  ],
                   "TextureMetadata": null,
-                  "ParticleSizeSandMetadata": null,
-                  "ParticleSizeSiltMetadata": null,
-                  "ParticleSizeClayMetadata": null,
+                  "ParticleSizeSandMetadata": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                  ],
+                  "ParticleSizeSiltMetadata": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                  ],
+                  "ParticleSizeClayMetadata": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                  ],
                   "Name": "Physical",
                   "ResourceName": null,
                   "Children": [
                     {
                       "$type": "Models.Soils.SoilCrop, Models",
                       "LL": [
-                        0.261,
-                        0.248,
                         0.28,
-                        0.306,
-                        0.36,
-                        0.392,
+                        0.28,
+                        0.28,
+                        0.28,
+                        0.28,
+                        0.28,
                         0.446
                       ],
                       "KL": [
@@ -261,9 +325,33 @@
                         1.0,
                         1.0
                       ],
-                      "LLMetadata": null,
-                      "KLMetadata": null,
-                      "XFMetadata": null,
+                      "LLMetadata": [
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                      ],
+                      "KLMetadata": [
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                      ],
+                      "XFMetadata": [
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                      ],
                       "Name": "WheatSoil",
                       "ResourceName": null,
                       "Children": [],
@@ -329,8 +417,8 @@
                     300.0
                   ],
                   "Carbon": [
-                    1.2,
-                    0.96,
+                    4.53,
+                    4.53,
                     0.6,
                     0.3,
                     0.18,
@@ -339,12 +427,12 @@
                   ],
                   "CarbonUnits": 0,
                   "SoilCNRatio": [
-                    12.0,
-                    12.0,
-                    12.0,
-                    12.0,
-                    12.0,
-                    12.0,
+                    7.44,
+                    7.44,
+                    7.44,
+                    7.44,
+                    7.44,
+                    7.44,
                     12.0
                   ],
                   "FBiom": [
@@ -394,21 +482,61 @@
                     300.0
                   ],
                   "PH": [
-                    8.0,
-                    8.0,
-                    8.0,
-                    8.0,
-                    8.0,
-                    8.0,
+                    7.0,
+                    7.0,
+                    7.0,
+                    7.0,
+                    7.0,
+                    7.0,
                     8.0
                   ],
                   "PHUnits": 0,
-                  "EC": null,
-                  "ESP": null,
-                  "CEC": null,
-                  "ECMetadata": null,
+                  "EC": [
+                    0.304,
+                    0.304,
+                    0.304,
+                    0.304,
+                    0.304,
+                    0.304,
+                    0.0
+                  ],
+                  "ESP": [
+                    0.25,
+                    0.25,
+                    0.25,
+                    0.25,
+                    0.25,
+                    0.25,
+                    0.0
+                  ],
+                  "CEC": [
+                    49.67,
+                    49.67,
+                    49.67,
+                    49.67,
+                    49.67,
+                    49.67,
+                    0.0
+                  ],
+                  "ECMetadata": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                  ],
                   "CLMetadata": null,
-                  "ESPMetadata": null,
+                  "ESPMetadata": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                  ],
                   "PHMetadata": null,
                   "Name": "Chemical",
                   "ResourceName": null,
@@ -436,7 +564,7 @@
                     0.457070570557793,
                     0.452331759845006
                   ],
-                  "InitialPAWmm": 361.2454283127387,
+                  "InitialPAWmm": 353.5747054386016,
                   "RelativeTo": "LL15",
                   "FilledFromTop": false,
                   "Name": "Water",
@@ -473,8 +601,8 @@
                     300.0
                   ],
                   "InitialValues": [
-                    1.0,
-                    1.0,
+                    3.1,
+                    2.55,
                     1.0,
                     1.0,
                     1.0,
@@ -579,7 +707,7 @@
               "InitialResidueMass": 500.0,
               "InitialStandingFraction": 0.0,
               "InitialCPR": 0.0,
-              "InitialCNR": 100.0,
+              "InitialCNR": 7.44,
               "Name": "SurfaceOrganicMatter",
               "ResourceName": "SurfaceOrganicMatter",
               "Children": [],
@@ -1058,7 +1186,7 @@
               "Parameters": [
                 {
                   "Key": "FilePath",
-                  "Value": "C:\\Users\\vagga\\Desktop\\pear_soil_moisture_data.txt"
+                  "Value": "/home/eathanasakis/Intership/MultiAgent_Apsimx/APSIM_FILES/Wheat_soil_moisture_data.txt"
                 }
               ],
               "Name": "SoilWaterUpdate",

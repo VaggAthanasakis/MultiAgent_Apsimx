@@ -241,6 +241,8 @@ class OpenMeteoWeatherDownloader:
             file.write(f"longitude = {self.longitude}\n")
 
         #return final_df
+        # Return the total amount of rain
+        return final_df['rain'].sum()
 
 
 # If you want to test the class directly, you can add the following:

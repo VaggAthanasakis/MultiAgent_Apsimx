@@ -51,7 +51,7 @@ def display_graph(graph):
 
 
 @tool
-def apsim_tool(start_date: str, end_date: str):
+def apsim_tool(start_date: str, end_date: str, crop_type: str):
     """
     Creates a crop simulation about the development, the yield and the 
     irrigation demands of a spesific crop.
@@ -61,6 +61,7 @@ def apsim_tool(start_date: str, end_date: str):
     Args:
         start_date: starting date of the period, FORMAT: YYYY-MM-DD.
         end_date: ending date of the period, FORMAT: YYYY-MM-DD.
+        crop_type: either 'perennial' or 'annual'
         
     """
 
@@ -70,7 +71,12 @@ def apsim_tool(start_date: str, end_date: str):
     logger.info("Inside Apsim Tool")
 
     apsim_exe = config.get("Paths", "apsim_exe")
-    commands_file = config.get("Paths", "commands_file")
+
+    ###
+    if(crop_type == "perennial"):
+        commands_file = config.get("Paths", "perennial_commands_file")
+    else:
+        commands_file = config.get("Paths", "annual_commands_file")
 
     try:
         subprocess.run([apsim_exe, ' ','--apply', commands_file], check=True)
@@ -90,6 +96,8 @@ def weather_data_retrieve_tool(start_date: str, end_date: str):
     Args:
         start_date: starting date of the period, FORMAT: YYYY-MM-DD
         end_date: ending date of the period, FORMAT: YYYY-MM-DD
+    Returns:
+        total_rain: the total amount of rain for that period
     """
 
     # Retrieve all the data needed from the api response
@@ -118,14 +126,15 @@ def weather_data_retrieve_tool(start_date: str, end_date: str):
                                       end_date=end_date,
                                       csv_filename=csv_file_path,
                                       ini_filename=ini_file_path)
-    retriever.fetch_and_process()
+    total_rain = retriever.fetch_and_process()
+    print(f"Total Rain: {total_rain}")
 
     # Ensure that the weather files have been created before returnig
     while not (os.path.exists(csv_file_path) and os.path.exists(ini_file_path)):
         logger.info("Sleeping")
         time.sleep(0.1)
 
-    return "Weather Data Acquired."
+    return total_rain
 
 
 @tool
@@ -138,43 +147,26 @@ def get_sensor_data_tool(crop: str):
     
     Args:
         crop: the crop that the simulation performed to.
+        crop_type: returns the crop type 'annual' or 'perennial' 
     """
-
+    crop = crop.capitalize()
+    print(f"CROP: {crop}")
     logger.info("Inside sensor_data_tool")
     sensor_data_file_path = config["Paths"]["soil_moisture_data"].replace("{crop}", crop)
     #print("\n",sensor_data_file_path)
     # Default sensor data if none provided
 
     sensor_data = [
-        ("2024-08-1", 0, 0.1),
-        ("2024-08-2", 0, 0.1),
-        ("2024-08-3", 0, 0.1),
-        ("2024-08-4", 0, 0.1),
-        ("2024-08-5", 0, 0.1),
-        ("2024-08-6", 0, 0.1),
-        ("2024-08-7", 0, 0.1),
-        ("2024-08-8", 0, 0.1),
-        ("2024-08-9", 0, 0.1),
-        ("2024-08-10", 0, 0.1),
-        ("2024-08-11", 0, 0.1),
-        ("2024-08-12", 0, 0.1),
-        ("2024-08-13", 0, 0.1),
-        ("2024-08-14", 0, 0.1),
-        ("2024-08-15", 0, 0.1),
-        ("2024-08-16", 0, 0.1),
-        ("2024-08-17", 0, 0.1),
-        ("2024-08-18", 0, 0.1),
-        ("2024-08-19", 0, 0.1),
-        ("2024-08-20", 0, 0.1),
-        ("2024-08-21", 0, 0.1),
-        ("2024-08-22", 0, 0.1),
-        ("2024-08-23", 0, 0.1),
-        ("2024-08-24", 0, 0.1),
-        ("2024-08-25", 0, 0.1),
-        ("2024-08-26", 0, 0.1),
-        ("2024-08-27", 0, 0.1),
-        ("2024-08-28", 0, 0.1),
-        ("2024-08-29", 0, 0.1)
+        ("2025-03-5", 0, 0.1),
+        ("2025-03-6", 0, 0.1),
+        ("2025-03-7", 0, 0.1),
+        ("2025-03-8", 0, 0.1),
+        ("2025-03-9", 0, 0.1),
+        ("2025-03-10", 0, 0.1),
+        ("2025-03-11", 0, 0.1),
+        ("2025-03-12", 0, 0.1),
+        ("2025-03-13", 0, 0.1),
+        ("2025-03-14", 0, 0.1),
     ]
 
 
@@ -198,11 +190,15 @@ def data_extraction_tool(crop: str):
 
     Args:
         crop: the crop that the simulation performed to.
+
+    Returns:
+        total_water_applied: The total amount of water applied
     """
 
     # Path to your .db file
     logger.info("Inside Data Extraction Tool")
 
+    crop = crop.capitalize()
     db_path = config["Paths"]["db_path"].replace("{crop}",crop)
     # Connect to the database
     conn = sqlite3.connect(db_path)
@@ -237,6 +233,8 @@ def get_api_data_tool(field_id: int):
 
     Args:
         field_id: the id of the Field that the cultivation is taking place
+    Returns:
+        crop: the crop name 
     """
     logger.info("Inside API Tool")
     # The file where the data will be stored
@@ -263,7 +261,7 @@ def get_api_data_tool(field_id: int):
     soil_analysis = {}
     for value in data["farmland"]["latest_soilanalysis"]["soilanalysis_values"]:
         
-        prop_name = value["soilanalysis_property"]["name"].strip().lower()  # Normalize names
+        prop_name = value["soilanalysis_property"]["name"].strip()  # Normalize names
         
         try:
             # Convert values to float (if possible)
@@ -321,10 +319,10 @@ def get_api_data_tool(field_id: int):
         "Silt": soil_analysis.get("silt"),
         "pH": soil_analysis.get("ph"),
         "BD": 1.16,                  ## We have to take the below values from the api
-        "LL15": 0.16,
+        "LL15": 0.28,
         "DUL": 0.36,
         "SAT": 0.56,
-        "LL": 0.16,
+        "LL": 0.28,
         "ESP": 0.25,
         "CEC": 49.67,
         "EC": 0.304,
@@ -336,8 +334,10 @@ def get_api_data_tool(field_id: int):
     }
 
     # Check if we have a annual or a perennial crop
+
     crop_type = data.get("croptype", {}).get("growth_type")
     if(crop_type == "perennial"):
+        
         extracted_data.update({
             "Start_Age": 1,
             "Altitude": data.get("farmland", {}).get("elevation"),
@@ -353,6 +353,8 @@ def get_api_data_tool(field_id: int):
     with open(clean_json_data, "w", encoding="utf-8") as file:
         json.dump(extracted_data, file, indent=4, ensure_ascii=False)
 
+    crop =  data.get("croptype", {}).get("name")
+    return crop, crop_type
 
 @tool
 def get_time():
@@ -361,7 +363,10 @@ def get_time():
     date in the format of yyyy-mm-dd
 
     """
-    return datetime.now.strftime("%Y-%m-%d")
+    logger.info("Inside get_time Tool")
+    current_date = datetime.now.strftime("%Y-%m-%d")
+    print(current_date)
+    return current_date
 
 # helpfull functions
 def command_file_format(start_date: str, end_date: str):
@@ -574,19 +579,18 @@ crop_simulator_agent = create_react_agent(
     llm,
     tools=[get_api_data_tool, weather_data_retrieve_tool, get_sensor_data_tool, apsim_tool],
     messages_modifier="""
-    You are an AI assistant designed to help with Crop activities. 
+    You are an AI assistant designed to help with Crop activities by performing crop simulations. 
 
     Use ONE tool per response. Format: {"name": "<tool_name>", "parameters": {}}.
-    apsim_tool MUST BE EXECUTED LAST
     The order of the tool execution MUST BE:
         1) get_api_data_tool
         2) weather_data_retrieve_tool
         3) get_sensor_data_tool
         4) apsim_tool
-    Always call the tools with this order.
-    get_sensor_data_tool MUST BE EXECUTED EVERY TIME
-    If the user prompt requires a crop simulation, you must call the apsim_tool.
+    Always call the tools with this order when you want to perform a simulation.
     DO not analyze the data of the simulation.
+    It's not your job to communicate with the user, just perform the tool executions without outputting 
+    any message to the user.
 
 """
 
@@ -688,8 +692,9 @@ graph = builder.compile()
 
 # This will be the prompt that the user will give to the system from the frontend
 user_prompt = """
-    1) Create a simulation in the field with id = 62 for the period starting from 2025-03-04 until 2025-03-20
+    1) Create a crop simulation in the field with id = 62 for the period starting from 2025-03-04 until 2025-03-20
     2) Analyse the Data of the simulation in order to output the total applied water.
+    3) Give some advice for the crop.
 
 """
 

@@ -31,8 +31,8 @@
       "Children": [
         {
           "$type": "Models.Climate.Weather, Models",
-          "ConstantsFile": null,
-          "FileName": "%root%/Examples/WeatherFiles/NZ_Lincoln.met",
+          "ConstantsFile": "/home/eathanasakis/Intership/MultiAgent_Apsimx/APSIM_FILES/Heraklion.ini",
+          "FileName": "Heraklion.csv",
           "ExcelWorkSheetName": null,
           "Latitude": -43.624,
           "Tav": 11.4,
@@ -45,8 +45,8 @@
         },
         {
           "$type": "Models.Clock, Models",
-          "Start": "2003-10-20T00:00:00",
-          "End": "2004-06-05T00:00:00",
+          "Start": "2025-03-04T00:00:00",
+          "End": "2025-03-20T00:00:00",
           "Name": "Clock",
           "ResourceName": null,
           "Children": [],
@@ -93,8 +93,8 @@
               "Country": null,
               "NaturalVegetation": null,
               "ApsoilNumber": null,
-              "Latitude": 0.0,
-              "Longitude": 0.0,
+              "Latitude": 39.3614,
+              "Longitude": 22.093,
               "LocationAccuracy": null,
               "YearOfSampling": null,
               "DataSource": null,
@@ -112,18 +112,46 @@
                     300.0,
                     300.0
                   ],
-                  "ParticleSizeSand": null,
-                  "ParticleSizeSilt": null,
-                  "ParticleSizeClay": null,
-                  "Rocks": null,
+                  "ParticleSizeSand": [
+                    20.0,
+                    20.0,
+                    20.0,
+                    20.0,
+                    20.0,
+                    20.0
+                  ],
+                  "ParticleSizeSilt": [
+                    70.0,
+                    70.0,
+                    70.0,
+                    70.0,
+                    70.0,
+                    70.0
+                  ],
+                  "ParticleSizeClay": [
+                    10.0,
+                    10.0,
+                    10.0,
+                    10.0,
+                    10.0,
+                    10.0
+                  ],
+                  "Rocks": [
+                    0.0,
+                    0.0,
+                    0.135,
+                    0.0,
+                    0.135,
+                    0.135
+                  ],
                   "Texture": null,
                   "BD": [
-                    1.2,
-                    1.2,
-                    1.2,
-                    1.2,
-                    1.2,
-                    1.2
+                    1.16,
+                    1.16,
+                    1.16,
+                    1.16,
+                    1.16,
+                    1.16
                   ],
                   "AirDry": [
                     0.08,
@@ -134,28 +162,28 @@
                     0.15
                   ],
                   "LL15": [
-                    0.16,
-                    0.16,
-                    0.15,
-                    0.13,
-                    0.15,
-                    0.15
+                    0.28,
+                    0.28,
+                    0.28,
+                    0.28,
+                    0.28,
+                    0.28
                   ],
                   "DUL": [
-                    0.33,
-                    0.33,
-                    0.31,
-                    0.27,
-                    0.3,
-                    0.3
+                    0.36,
+                    0.36,
+                    0.36,
+                    0.36,
+                    0.36,
+                    0.36
                   ],
                   "SAT": [
-                    0.5,
-                    0.5,
-                    0.44,
-                    0.46,
-                    0.44,
-                    0.44
+                    0.56,
+                    0.56,
+                    0.56,
+                    0.56,
+                    0.56,
+                    0.56
                   ],
                   "KS": null,
                   "BDMetadata": null,
@@ -164,23 +192,51 @@
                   "DULMetadata": null,
                   "SATMetadata": null,
                   "KSMetadata": null,
-                  "RocksMetadata": null,
+                  "RocksMetadata": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                  ],
                   "TextureMetadata": null,
-                  "ParticleSizeSandMetadata": null,
-                  "ParticleSizeSiltMetadata": null,
-                  "ParticleSizeClayMetadata": null,
+                  "ParticleSizeSandMetadata": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                  ],
+                  "ParticleSizeSiltMetadata": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                  ],
+                  "ParticleSizeClayMetadata": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                  ],
                   "Name": "Physical",
                   "ResourceName": null,
                   "Children": [
                     {
                       "$type": "Models.Soils.SoilCrop, Models",
                       "LL": [
-                        0.16,
-                        0.16,
-                        0.15,
-                        0.2,
-                        0.3,
-                        0.3
+                        0.28,
+                        0.28,
+                        0.28,
+                        0.28,
+                        0.28,
+                        0.28
                       ],
                       "KL": [
                         0.1,
@@ -198,9 +254,30 @@
                         0.0,
                         0.0
                       ],
-                      "LLMetadata": null,
-                      "KLMetadata": null,
-                      "XFMetadata": null,
+                      "LLMetadata": [
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                      ],
+                      "KLMetadata": [
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                      ],
+                      "XFMetadata": [
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                      ],
                       "Name": "PotatoSoil",
                       "ResourceName": null,
                       "Children": [],
@@ -270,8 +347,8 @@
                     300.0
                   ],
                   "Carbon": [
-                    3.5,
-                    2.5,
+                    4.53,
+                    4.53,
                     1.2,
                     1.03,
                     0.47,
@@ -279,12 +356,12 @@
                   ],
                   "CarbonUnits": 0,
                   "SoilCNRatio": [
-                    11.5,
-                    11.5,
-                    11.5,
-                    11.5,
-                    11.5,
-                    11.5
+                    7.44,
+                    7.44,
+                    7.44,
+                    7.44,
+                    7.44,
+                    7.44
                   ],
                   "FBiom": [
                     0.025,
@@ -329,20 +406,55 @@
                     300.0
                   ],
                   "PH": [
-                    6.6,
-                    6.2,
-                    5.7,
-                    5.5,
-                    5.5,
-                    5.5
+                    7.0,
+                    7.0,
+                    7.0,
+                    7.0,
+                    7.0,
+                    7.0
                   ],
                   "PHUnits": 0,
-                  "EC": null,
-                  "ESP": null,
-                  "CEC": null,
-                  "ECMetadata": null,
+                  "EC": [
+                    0.304,
+                    0.304,
+                    0.304,
+                    0.304,
+                    0.304,
+                    0.304
+                  ],
+                  "ESP": [
+                    0.25,
+                    0.25,
+                    0.25,
+                    0.25,
+                    0.25,
+                    0.25
+                  ],
+                  "CEC": [
+                    49.67,
+                    49.67,
+                    49.67,
+                    49.67,
+                    49.67,
+                    49.67
+                  ],
+                  "ECMetadata": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                  ],
                   "CLMetadata": null,
-                  "ESPMetadata": null,
+                  "ESPMetadata": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                  ],
                   "PHMetadata": null,
                   "Name": "Chemical",
                   "ResourceName": null,
@@ -368,7 +480,7 @@
                     0.3,
                     0.3
                   ],
-                  "InitialPAWmm": 231.0,
+                  "InitialPAWmm": 32.99999999999993,
                   "RelativeTo": "LL15",
                   "FilledFromTop": true,
                   "Name": "Water",
@@ -404,8 +516,8 @@
                     300.0
                   ],
                   "InitialValues": [
-                    33.333333333333336,
-                    12.500000000000002,
+                    3.1,
+                    2.55,
                     3.8888888888888897,
                     3.8888888888888897,
                     0.38333333333333336,
@@ -505,7 +617,7 @@
               "InitialResidueMass": 2000.0,
               "InitialStandingFraction": 0.0,
               "InitialCPR": 0.0,
-              "InitialCNR": 80.0,
+              "InitialCNR": 7.44,
               "Name": "SurfaceOrganicMatter",
               "ResourceName": "SurfaceOrganicMatter",
               "Children": [],
@@ -837,7 +949,7 @@
               "Parameters": [
                 {
                   "Key": "FilePath",
-                  "Value": "C:\\Users\\vagga\\Desktop\\pear_soil_moisture_data.txt"
+                  "Value": "/home/eathanasakis/Intership/MultiAgent_Apsimx/APSIM_FILES/Wheat_soil_moisture_data.txt"
                 }
               ],
               "Name": "SoilWaterUpdate",

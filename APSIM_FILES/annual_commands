@@ -1,7 +1,7 @@
-load Wheat.apsimx
+load Potato.apsimx
 
 [Clock].Start = 2025-03-04
-[Clock].End = 2025-03-19
+[Clock].End = 2025-03-20
 [Weather].FileName = Heraklion.csv
 [Weather].ConstantsFile = Heraklion.ini
 
@@ -12,11 +12,11 @@ load Wheat.apsimx
 [Physical].ParticleSizeSilt[1:6] = 70
 [Physical].ParticleSizeClay[1:6] = 10
 [Physical].BD[1:6] = 1.16
-[Physical].LL15[1:6] = 0.16
+[Physical].LL15[1:6] = 0.28
 [Physical].DUL[1:6] = 0.36
 [Physical].SAT[1:6] = 0.56
 
-[WheatSoil].LL[1:6] = 0.18
+[PotatoSoil].LL[1:6] = 0.28
 
 [Chemical].PH[1:6] = 7.0
 [Soil].Chemical.ESP[1:6] = 0.25
