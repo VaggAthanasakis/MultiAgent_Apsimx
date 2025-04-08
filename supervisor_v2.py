@@ -22,19 +22,20 @@ import logging
 import configparser
 import requests
 import json
+from pathlib import Path
 
 
 # Ignore all warnings
 warnings.filterwarnings("ignore")
 warnings.filterwarnings("ignore", category=RuntimeWarning, module="tkinter")
 
-os.environ["LANGCHAIN_API_KEY"] = "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"
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_PROJECT"] = "langsmith-onboarding"
+# os.environ["LANGCHAIN_API_KEY"] = "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"
+# os.environ["LANGCHAIN_TRACING_V2"] = "true"
+# os.environ["LANGCHAIN_PROJECT"] = "langsmith-onboarding"
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger(__name__)
 
 config = configparser.ConfigParser()
 config.read("ubuntu_config.ini")
@@ -83,7 +84,7 @@ def apsim_tool(start_date: str, end_date: str, crop_type: str):
         subprocess.run([apsim_exe, ' ','--apply', commands_file], check=True)
         return "SIMULATION PERFORMED"
     except subprocess.CalledProcessError as e:
-        logger.error(f"ApsimX Tool Failed: {e}")
+        #logger.error(f"ApsimX Tool Failed: {e}")
         raise
 
 
@@ -135,7 +136,7 @@ def weather_data_retrieve_tool(start_date: str, end_date: str):
 
     # Ensure that the weather files have been created before returnig
     while not (os.path.exists(csv_file_path) and os.path.exists(ini_file_path)):
-        logger.info("Sleeping")
+        #logger.info("Sleeping")
         time.sleep(0.1)
 
     return total_rain
@@ -148,9 +149,16 @@ def get_sensor_data_tool(crop: str):
     soil moisture in various soil depths.
     It stores the results into a file.
     This tool must be executed everytime.
+
+    The results of this tool have the form of: date, layer, soil moisture
+    The date is in the format of YYYY-MM-DD, the layer is an integer
+    and the soil moisture is a float number.
+    The date is the date of the simulation.
+    The layer is the soil depth in cm.
+    The soil moisture is the soil moisture in mm
     
     Args:
-        crop: the crop that the simulation performed to.
+        crop: the crop that the simulation performed to. For example could be 'pear', 'olive', 'wheat', 'potato', 'corn', 'barley' etc.
         crop_type: returns the crop type 'annual' or 'perennial' 
     """
     crop = crop.capitalize()
@@ -162,17 +170,21 @@ def get_sensor_data_tool(crop: str):
     # Default sensor data if none provided
 
     sensor_data = [
-        ("2025-03-5", 0, 0.1),
-        ("2025-03-6", 0, 0.1),
-        ("2025-03-7", 0, 0.1),
-        ("2025-03-8", 0, 0.1),
-        ("2025-03-9", 0, 0.1),
-        ("2025-03-10", 0, 0.1),
-        ("2025-03-11", 0, 0.1),
-        ("2025-03-12", 0, 0.1),
-        ("2025-03-13", 0, 0.1),
-        ("2025-03-14", 0, 0.1),
+        ("2025-04-5", 0, 5),
+        ("2025-04-6", 0, 5),
+        ("2025-04-7", 0, 5),
+        ("2025-04-8", 0, 5),
+        ("2025-04-9", 0, 2),
+        ("2025-04-10", 0, 5),
+        ("2025-04-11", 0, 1),
+        ("2025-04-12", 0, 2),
+        ("2025-04-13", 0, 2),
+        ("2025-04-14", 0, 2),
     ]
+
+    # ​To convert volumetric water content (VWC) to millimeters (mm) of water within a specific soil depth, 
+    # you can use the following formula:​
+    # Depth of Water (mm) = VWC (%) × Soil Depth (mm) / 100
 
 
     with open(sensor_data_file_path, "w") as txtfile:
@@ -186,6 +198,7 @@ def get_sensor_data_tool(crop: str):
                 date_val = date_val.strftime("%Y-%m-%d")
             txtfile.write(f"{date_val},{layer},{sw}\n")
 
+    return sensor_data
 
 @tool
 def data_extraction_tool(crop: str):
@@ -194,7 +207,7 @@ def data_extraction_tool(crop: str):
     Can extract data like total water applied.
 
     Args:
-        crop: the crop that the simulation performed to.
+        crop: the crop that the simulation performed to. For example could be 'pear', 'olive', 'wheat', 'potato', 'corn', 'barley' etc.
 
     Returns:
         total_water_applied: The total amount of water applied
@@ -203,6 +216,7 @@ def data_extraction_tool(crop: str):
     # Path to your .db file
     #logger.info("Inside Data Extraction Tool")
     print("\nInside Data Extraction Tool")
+    print(f"\nEXTRACTION CROP: {crop}")
 
     crop = crop.capitalize()
     db_path = config["Paths"]["db_path"].replace("{crop}",crop)
@@ -242,6 +256,10 @@ def get_api_data_tool(field_id: int):
         field_id: the id of the Field that the cultivation is taking place
     Returns:
         crop: the crop name 
+        growth_type:  perennial or annual
+        sand: the sand percentage of the Soil Texture
+        silt: the silt percentage of the Soil Texture
+        clay: the clay percentage of the Soil Texture
     """
     #logger.info("Inside API Tool")
     print("\nInside API Tool")
@@ -266,44 +284,38 @@ def get_api_data_tool(field_id: int):
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data: {e}")
     
-    soil_analysis = {}
-    for value in data["farmland"]["latest_soilanalysis"]["soilanalysis_values"]:
-        
-        prop_name = value["soilanalysis_property"]["name"].strip()  # Normalize names
-        
-        try:
-            # Convert values to float (if possible)
-            soil_analysis[prop_name] = float(value["value"])
-        except (ValueError, TypeError):
-            # Keep as string if conversion fails
-            soil_analysis[prop_name] = value["value"]
-
-    # soil_analysis_values = data.get("farmland", {}).get("latest_soilanalysis", {}).get("soilanalysis_values", [])
     # soil_analysis = {}
-    # for value in soil_analysis_values:
+    # for value in data["farmland"]["latest_soilanalysis"]["soilanalysis_values"]:
+        
+    #     prop_name = value["soilanalysis_property"]["name"].strip()  # Normalize names
+        
     #     try:
-    #         # Safely get property name with fallbacks
-    #         prop_entry = value.get("soilanalysis_property", {})
-    #         prop_name = prop_entry.get("name", "").strip().lower()
-            
-    #         if not prop_name:
-    #             continue  # Skip entries without property name
-                
-    #         raw_value = value.get("value")
-            
-    #         # Try converting to float, fallback to original value
-    #         soil_analysis[prop_name] = float(raw_value) if raw_value is not None else None
+    #         # Convert values to float (if possible)
+    #         soil_analysis[prop_name] = float(value["value"])
     #     except (ValueError, TypeError):
-    #         soil_analysis[prop_name] = raw_value
+    #         # Keep as string if conversion fails
+    #         soil_analysis[prop_name] = value["value"]
+    soil_analysis = {}
+    try:
+        soil_values = data.get("farmland", {}).get("latest_soilanalysis", {}).get("soilanalysis_values", [])
+        if not soil_values:
+            raise ValueError("Missing or empty 'soilanalysis_values' in API response.")
+        
+        for value in soil_values:
+            prop_name = value.get("soilanalysis_property", {}).get("name", "").strip()  # Normalize names
+            if not prop_name:
+                continue  # Skip if property name is missing
+            
+            try:
+                # Convert values to float (if possible)
+                soil_analysis[prop_name] = float(value["value"])
+            except (ValueError, TypeError):
+                # Keep as string if conversion fails
+                soil_analysis[prop_name] = value["value"]
+    except Exception as e:
+        print(f"Error processing soil analysis data: {e}")
 
-    # # Set default values if no analysis found
-    # if not soil_analysis:
-    #     soil_analysis = {
-    #         "ph": 7.0,
-    #         "organic_matter": 2.5,
-    #         "phosphorus": 15.0,
-    #         "potassium": 150.0
-    #     }
+
     # Safely get coordinates with try/except (to handle missing keys or indices)
     try:
         longitude = data["farmland"]["coordinates"]["coordinates"][0][0][0]
@@ -315,16 +327,23 @@ def get_api_data_tool(field_id: int):
     except (KeyError, IndexError, TypeError):
         latitude = None
     
+    # get these values in order to return them
+    crop =  data.get("croptype", {}).get("name")
+    growth_type = data.get("croptype", {}).get("growth_type")
+    clay = soil_analysis.get("clay")
+    sand = soil_analysis.get("sand")
+    silt = soil_analysis.get("silt")
+
     extracted_data = {
         # get() without default returns None if keys are missing
-        "crop_type": data.get("croptype", {}).get("name"),
-        "growth_type": data.get("croptype", {}).get("growth_type"),
+        "crop_type": crop,
+        "growth_type": growth_type,
         "longitude": longitude,
         "latitude": latitude,
         # Soil analysis values (will be None if keys don't exist)
-        "Clay": soil_analysis.get("clay"),
-        "Sand": soil_analysis.get("sand"),
-        "Silt": soil_analysis.get("silt"),
+        "Clay": clay,
+        "Sand": sand,
+        "Silt": silt,
         "pH": soil_analysis.get("ph"),
         "BD": 1.16,                  ## We have to take the below values from the api
         "LL15": 0.28,
@@ -342,9 +361,7 @@ def get_api_data_tool(field_id: int):
     }
 
     # Check if we have a annual or a perennial crop
-
-    crop_type = data.get("croptype", {}).get("growth_type")
-    if(crop_type == "perennial"):
+    if(growth_type == "perennial"):
         
         extracted_data.update({
             "Start_Age": 1,
@@ -361,8 +378,14 @@ def get_api_data_tool(field_id: int):
     with open(clean_json_data, "w", encoding="utf-8") as file:
         json.dump(extracted_data, file, indent=4, ensure_ascii=False)
 
-    crop =  data.get("croptype", {}).get("name")
-    return crop, crop_type
+    output = {
+    "crop": crop,
+    "growth_type": growth_type,
+    "sand": sand,
+    "silt": silt,
+    "clay": clay
+    }
+    return output
 
 @tool
 def get_time():
@@ -530,7 +553,9 @@ def command_file_format(start_date: str, end_date: str):
 
 
 # Create a Supervisor Agent
-members = ["crop_simulator","simulation_analysis","advisor"]
+#members = ["crop_simulator","simulation_analysis","advisor"]
+members = ["crop_simulator","greek_translator"]
+#members = ["advisor"]
 # Our team supervisor is an LLM node. It just picks the next agent to process
 # and decides when the work is completed
 options = members + ["FINISH"]
@@ -541,7 +566,10 @@ class Router(TypedDict):
     next: Literal[*options] # type: ignore
 
 
-llm = ChatOllama(model="llama3.3:latest", temperature = 0)
+#llm = ChatOllama(model="llama3.3:latest", temperature = 0)
+# llm = ChatOllama(model="llama3.1:8b", temperature = 0)
+llm = ChatOllama(model="qwen2.5:72b", temperature = 0)
+greek_llm = ChatOllama(model="MHKetbi/ilsp-Llama-Krikri-8B-Instruct", temperature = 0)
 
 class State(MessagesState):
     next: str
@@ -552,7 +580,7 @@ def supervisor_node(state: State) -> Command[Literal[*members, "__end__"]]: # ty
     # Check for progress in the state
     progress = state.get("progress", [])
     progress_str = f"Completed tasks: {', '.join(progress)}." if progress else ""
-    
+    print(f"\n{progress_str}")
     # Update the system prompt to include progress information
     updated_prompt = (
         f"You are a supervisor managing a conversation between the following workers: {members}. "
@@ -561,7 +589,7 @@ def supervisor_node(state: State) -> Command[Literal[*members, "__end__"]]: # ty
         f"{members + ['FINISH']}. FINISH is outputed when all tasks have completed."
         "If the progress contains worker: 'crop_simulator' YOU CANNOT ROUTE TO 'crop_simulator' AGAIN"
         "If the progress contains worker: 'simulation_analysis' YOU CANNOT ROUTE TO 'simulation_analysis' AGAIN"
-        "If you cannot route anywhere, RETURN FINISH"        
+        "If you cannot route anywhere, RETURN key-word: 'FINISH' "        
 )
 
     #print("\nPROGRESS: ",progress)
@@ -587,97 +615,97 @@ def supervisor_node(state: State) -> Command[Literal[*members, "__end__"]]: # ty
 # Agents
 crop_simulator_agent = create_react_agent(
     llm,
-    tools=[get_api_data_tool, weather_data_retrieve_tool, get_sensor_data_tool, apsim_tool],
+    tools=[get_api_data_tool, weather_data_retrieve_tool, get_sensor_data_tool, apsim_tool, get_time, data_extraction_tool],
     messages_modifier="""
-    You are an AI assistant designed to help with Crop activities by performing crop simulations. 
+    You are an AI assistant designed to help with Crop activities by performing crop simulations and give a response to the farmer
+    after reasoning about the data. Your responses must be in English NOT IN GREEK, thats another's agent work.
 
     Use ONE tool per response. Format: {"name": "<tool_name>", "parameters": {}}.
     The order of the tool execution MUST BE:
-        1) get_api_data_tool
-        2) weather_data_retrieve_tool
-        3) get_sensor_data_tool
-        4) apsim_tool
+        1) get_api_data_tool: this tool is used in order to retrieve data  from an api endpoint (like sand(%), silt(%), clay(%)).
+        2) weather_data_retrieve_tool: this tool is used in order to retrieve the weather data for a specific location
+        3) get_sensor_data_tool: this tool is used in order to retrieve the soil humidity data (per layer of soil) from the field.
+        4) apsim_tool: this tool is used in order to perform the crop simulation.
+        5) data_extraction_tool: this tool is used in order to extract data from the simulation (like total water applied).
+    If you there is not starting or ending date, before the call of 'weather_data_retrieve_tool' use the tool get_time to get the current date and set this current
+    date as the starting date for the 'weather_data_retrieve_tool' and use as end date the current date +  days after that.
     Always call the tools with this order when you want to perform a simulation.
-    DO not analyze the data of the simulation.
-    It's not your job to communicate with the user, just perform the tool executions without outputting 
-    any message to the user.
+    Its important to keep all the values of the output of the get_api_data_tool (sand,silt,clay,crop,growth_type) in the state of the graph.
 
+    
+    AFTER THE TOOLS EXECUTION:
+    -> You have to reason about the data and give a response to the farmer.
+    -> Consider and include in the response the data that you have received from the tools like: water applied, weather forecast, percentages of sand-silt-clay of the Soil Texture, the crop and the growth type.
+    -> The response must be easily understandable by a farmer.
+    -> Do not include polite closing remarks or encouragements to ask more questions. End responses directly with the relevant information.
+
+    Example output format:
+    'Irrigation Advisory Report
+
+    Crop: Wheat
+    Soil Texture:
+    Sand: x%
+    Silt: y%
+    Clay: z%
+
+    Weather Forecast 
+    Total Expected Rainfall: 0.2 mm
+
+    Soil Moisture (Upper Layer): 60 mm
+
+    Irrigation Applied in the simulation: 12 mm
+
+    → Usable water in the root zone is below optimal.
+
+    Recommended Water Application:
+
+    Apply 40 mm of irrigation water
+
+    This will replenish the root zone to near field capacity.'
+    
 """
 
 )
 
-simulation_analysis_agent = create_react_agent(
-    llm,
-    tools = [data_extraction_tool],
+greek_translator_agent = create_react_agent(
+    greek_llm,
+    tools = [],
     messages_modifier = """
-    You are an AI assistant designed to analyse the output of a crop simulation.
-    You can provide information about the Total amount of water applied.
-    In order to extract data from files, you can use the tool: 'data_extraction_tool'
+    You are an AI assistant designed to help with Crop activities by translating the response of the simulation analysis to Greek.
+    the response of the simulation analysis is in English and you have to translate it to Greek.
+    The user has already performed a crop simulation and the response of the simulation analysis is in English.
+    Your task is to translate the response to Greek.
+    The reponse must be easily understandable by a farmer.
+
+    Example output format: (Example Values, Do not use them)
+    'Αναφορά Άρδευσης'
+    Καλλιέργεια: Σιτάρι
+    Σύνθεση Εδάφους:
+    Άμμος: x%
+    Ίλυς: y%
+    Άργιλος: z%
+
+    Πρόγνωση Καιρού:
+    Συνολική Αναμενόμενη Βροχόπτωση: 0.2 mm
+    Υγρασία Εδάφους (Άνω Στρώμα): 60 mm
+
+    Άρδευση που εφαρμόστηκε στην προσομοίωση: 12 mm
+    → Το διαθέσιμο νερό στη ρίζα είναι κάτω από το βέλτιστο.
+
+    Συνιστώμενη Εφαρμογή Νερού:
+    Εφαρμόστε 40 mm αρδευτικού νερού τις επόμενες ημέρες.
 
 """
 )
 
-# advisor_agent = create_react_agent(
-#     llm,
-#     tools = [weather_data_retrieve_tool, get_sensor_data_tool, get_time],
-#     messages_modifier = """
-#     You are a professinal AI assistant designed to give advice for a specific 
-#     crop. You can give advice for the water irrigation demands and for the weather.
-#     In order to gain data for the soil humidity for the specific crop, you can gain soil
-#     humidity values from the tool 'get_sensor_data_tool'.
-#     In order to gain weather forecast for the next days, you can call the tool 'weather_data_retrieve_tool'.
-#     Just call the weather_data_retrieve_tool with starting day: current_date and end_day: 7 days after that.
-#     In order to find the current_date, use the tool 'get_time'
-#     Use ONE tool per response. Format: {"name": "<tool_name>", "parameters": {}}.
-    
-    
-#     Instructions: in order to give advice for a field you have to call the tools with this order ALWAYS:
-#         1) get_time
-#         2) weather_data_retrieve_tool (args: start_date=current_date end_date: current_date + 7)
-#         3) get_sensor_data_tool
 
-#     IT IS HIGHLY IMPORTANT TO CALL THE TOOL weather_data_retrieve_tool. IT IS MANDATORY to use the
-#     output of the get_time tool (current_date) as the start_date argument of the weather_data_retrieve tool
-
-#     Aftef that you have to reason for this data.
-#     + Check the humidity values of the soil and if you think that there is not enough water in the soil as an advice
-#       to the farmer for how much water he has to apply.
-#     + Check the weather forecast, starting from the current date, for the next 7 days in order to find out the amount 
-#       of the rain (mm) that is expected to be dropped.
-#     + Combine the soil humidity values with the weather forecast and synthesize a response like a mini advice 
-#       to the farmer about the amount of water (in mm) that he has to apply to the field, if needed.
-
-# """
-# )
-advisor_agent = create_react_agent(
-    llm,
-    tools=[weather_data_retrieve_tool, get_sensor_data_tool, get_time],
-    messages_modifier="""
-You are a professional AI assistant designed to give advice for a specific crop.
-You provide irrigation and weather recommendations based on soil humidity and weather forecast.
-
-You have access to the following tools:
-- get_time: Returns the current date in YYYY-MM-DD format.
-- weather_data_retrieve_tool: Retrieves the total rain (in mm) forecasted. It requires a starting date and an ending date. If the ending date is not provided, it computes the date 7 days after the starting date.
-- get_sensor_data_tool: Returns the soil humidity value.
-
-Instructions:
-1) Always start by calling get_time to get the current date (store this as "current_date").
-2) Next, call weather_data_retrieve_tool using current_date as the start_date and end_date start_date + 7 days.
-3) Finally, call get_sensor_data_tool to get the soil humidity.
-
-After obtaining the data, analyze:
-- If the soil humidity is low and little rain is forecasted, advise the farmer on applying additional water (in mm).
-- Otherwise, advise that no extra irrigation is needed.
-
-Remember: Use ONE tool call per response. Format your tool call as: {"name": "<tool_name>", "parameters": {}}.
-Also, it is HIGHLY IMPORTANT that when calling weather_data_retrieve_tool, you use the output of get_time (current_date) as its start_date.
-"""
-)
+# Create the nodes
 
 # graph nodes
 def crop_simulator_agent_node(state: State) -> Command[Literal["supervisor"]]:
+    print("\nInside Crop Simulator Node")
     result = crop_simulator_agent.invoke(state)
+
     new_progress = state.get("progress", []) + ["crop_simulator"]
    
     return Command(
@@ -690,68 +718,62 @@ def crop_simulator_agent_node(state: State) -> Command[Literal["supervisor"]]:
         goto="supervisor",
     )
 
-def simulation_analysis_node(state: State) -> Command[Literal["supervisor"]]:
-    result = simulation_analysis_agent.invoke(state)
+def greek_translator_agent_node(state: State) -> Command[Literal["supervisor"]]:
+    print("\nInside greek translator Node")
+    result = greek_translator_agent.invoke(state)
     # Append that the weather retrieval is done
-    new_progress = state.get("progress", []) + ["simulation_analysis"]
-   
+    new_progress = state.get("progress", []) + ["greek_translator"]
+    print("New_Progress: ",new_progress)
     return Command(
         update={
             "messages": [
-                HumanMessage(content=result["messages"][-1].content, name="simulation_analysis")
+                HumanMessage(content=result["messages"][-1].content, name="greek_translator")
             ],
             "progress": new_progress,
         },
         goto="supervisor",
     )
 
-def advisor_agent_node(state: State) -> Command[Literal["supervisor"]]:
-    result = advisor_agent.invoke(state)
-    # Append that the weather retrieval is done
-    new_progress = state.get("progress", []) + ["advisor"]
-   
-    return Command(
-        update={
-            "messages": [
-                HumanMessage(content=result["messages"][-1].content, name="advisor")
-            ],
-            "progress": new_progress,
-        },
-        goto="supervisor",
-    )
-
-# water = data_extraction_tool("pear")
-
-# Build the Graph
-builder = StateGraph(State)
-builder.add_edge(START,"supervisor")
-builder.add_node("supervisor",supervisor_node)
-builder.add_node("crop_simulator",crop_simulator_agent_node)
-builder.add_node("simulation_analysis",simulation_analysis_node)
-builder.add_node("advisor",advisor_agent_node)
-graph = builder.compile()
 
 
-#display_graph(graph)
+
+
+def multiagent_Apsimx_Simulator(prompt: str):
+
+    # Build the Graph
+    builder = StateGraph(State)
+    builder.add_edge(START,"supervisor")
+    builder.add_node("supervisor",supervisor_node)
+    builder.add_node("crop_simulator",crop_simulator_agent_node)
+    builder.add_node("greek_translator",greek_translator_agent_node)
+    #builder.add_node("advisor",advisor_agent_node)
+    graph = builder.compile()
+    
+    messages = [HumanMessage(content=prompt)]
+
+    messages = graph.invoke({'messages':messages, 'progress':[]})
+
+    for m in messages["messages"]:
+        m.pretty_print()
+
+
+    # remove the .temp files
+    for temp_file in Path('.').glob('*.temp'):
+        temp_file.unlink()
 
 
 
 # This will be the prompt that the user will give to the system from the frontend
-# user_prompt = """
-#     1) Create a crop simulation in the field with id = 62 for the period starting from 2025-03-04 until 2025-03-20
-#     2) Analyse the Data of the simulation in order to output the total applied water.
-#     3) Give some advice for the crop.
-
-# """
 user_prompt = """
-    give advice for a field starting from today and for the next 7 days
+    1) Create a crop simulation in the field with id = 62 for the period starting from today and for the next 7 days.
+    2) Analyse the Data of the simulation in order to output the total water that the simulation is recommends to apply.
+    3) Give some advice for the crop to the farmer for the next days in greek.
+
 """
+# user_prompt = """
+#     Give advice for the irrigation demands for a field of Wheat starting from today and for the next 7 days.
+#     Do not perform any simulation.
+# """
 
 
-messages = [HumanMessage(content=user_prompt)]
-
-messages = graph.invoke({'messages':messages, 'progress':[]})
-
-for m in messages["messages"]:
-    m.pretty_print()
-
+multiagent_Apsimx_Simulator(user_prompt)

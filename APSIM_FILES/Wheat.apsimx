@@ -12,8 +12,8 @@
       "Children": [
         {
           "$type": "Models.Clock, Models",
-          "Start": "2025-03-04T00:00:00",
-          "End": "2025-03-20T00:00:00",
+          "Start": "2025-04-08T00:00:00",
+          "End": "2025-04-15T00:00:00",
           "Name": "Clock",
           "ResourceName": null,
           "Children": [],
@@ -35,7 +35,7 @@
           "FileName": "Heraklion.csv",
           "ExcelWorkSheetName": "",
           "Latitude": 39.3614,
-          "Tav": 0.9705882352941176,
+          "Tav": 0.8625130260416666,
           "Amp": 0.0,
           "Name": "Weather",
           "ResourceName": null,
@@ -1186,7 +1186,7 @@
               "Parameters": [
                 {
                   "Key": "FilePath",
-                  "Value": "/home/eathanasakis/Intership/MultiAgent_Apsimx/APSIM_FILES/Wheat_soil_moisture_data.txt"
+                  "Value": "APSIM_FILES/Wheat_soil_moisture_data.txt"
                 }
               ],
               "Name": "SoilWaterUpdate",

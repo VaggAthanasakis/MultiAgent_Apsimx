@@ -1,7 +1,7 @@
 load Wheat.apsimx
 
-[Clock].Start = 2025-03-04
-[Clock].End = 2025-03-20
+[Clock].Start = 2025-04-08
+[Clock].End = 2025-04-15
 [Weather].FileName = Heraklion.csv
 [Weather].ConstantsFile = Heraklion.ini
 
@@ -30,6 +30,6 @@ load Wheat.apsimx
 
 [SurfaceOrganicMatter].InitialCNR = 7.44
 
-[SoilWaterUpdate].Script.FilePath = /home/eathanasakis/Intership/MultiAgent_Apsimx/APSIM_FILES/Wheat_soil_moisture_data.txt
+[SoilWaterUpdate].Script.FilePath = APSIM_FILES/Wheat_soil_moisture_data.txt
 
 run
