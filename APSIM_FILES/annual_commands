@@ -1,16 +1,16 @@
 load Wheat.apsimx
 
-[Clock].Start = 2025-04-08
-[Clock].End = 2025-04-15
+[Clock].Start = 2024-10-10
+[Clock].End = 2025-10-10
 [Weather].FileName = Heraklion.csv
 [Weather].ConstantsFile = Heraklion.ini
 
 [Soil].Latitude = 39.3614
 [Soil].Longitude = 22.093
 
-[Physical].ParticleSizeSand[1:6] = 20
-[Physical].ParticleSizeSilt[1:6] = 70
-[Physical].ParticleSizeClay[1:6] = 10
+[Physical].ParticleSizeSand[1:6] = 35
+[Physical].ParticleSizeSilt[1:6] = 30
+[Physical].ParticleSizeClay[1:6] = 35
 [Physical].BD[1:6] = 1.16
 [Physical].LL15[1:6] = 0.28
 [Physical].DUL[1:6] = 0.36
@@ -18,7 +18,7 @@ load Wheat.apsimx
 
 [WheatSoil].LL[1:6] = 0.28
 
-[Chemical].PH[1:6] = 7.0
+[Chemical].PH[1:6] = 7.5
 [Soil].Chemical.ESP[1:6] = 0.25
 [Soil].Chemical.CEC[1:6] = 49.67
 [Soil].Chemical.EC[1:6] = 0.304
@@ -31,5 +31,8 @@ load Wheat.apsimx
 [SurfaceOrganicMatter].InitialCNR = 7.44
 
 [SoilWaterUpdate].Script.FilePath = APSIM_FILES/Wheat_soil_moisture_data.txt
+[Sow].Script.PlantingDate = 10/15/2024
+[Sow].Script.PlantingDepth = 150
+[Sow].Script.RowSpacing = 770
 
 run

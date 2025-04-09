@@ -12,7 +12,7 @@
       "Children": [
         {
           "$type": "Models.Clock, Models",
-          "Start": "2025-04-08T00:00:00",
+          "Start": "2024-10-10T00:00:00",
           "End": "2025-04-15T00:00:00",
           "Name": "Clock",
           "ResourceName": null,
@@ -35,8 +35,8 @@
           "FileName": "Heraklion.csv",
           "ExcelWorkSheetName": "",
           "Latitude": 39.3614,
-          "Tav": 0.8625130260416666,
-          "Amp": 0.0,
+          "Tav": 3.071450888179152,
+          "Amp": 8.360505896245062,
           "Name": "Weather",
           "ResourceName": null,
           "Children": [],
@@ -547,11 +547,11 @@
                 {
                   "$type": "Models.Soils.Water, Models",
                   "Thickness": [
+                    100.0,
+                    100.0,
+                    100.0,
                     150.0,
                     150.0,
-                    300.0,
-                    300.0,
-                    300.0,
                     300.0,
                     300.0
                   ],
@@ -564,7 +564,7 @@
                     0.457070570557793,
                     0.452331759845006
                   ],
-                  "InitialPAWmm": 353.5747054386016,
+                  "InitialPAWmm": 230.21891427135802,
                   "RelativeTo": "LL15",
                   "FilledFromTop": false,
                   "Name": "Water",
@@ -725,82 +725,56 @@
             {
               "$type": "Models.Manager, Models",
               "CodeArray": [
-                "using Models.Interfaces;",
-                "using APSIM.Shared.Utilities;",
                 "using Models.Utilities;",
                 "using Models.Soils;",
                 "using Models.PMF;",
                 "using Models.Core;",
                 "using System;",
                 "using System.Linq;",
-                "using Models.Climate;",
+                "using APSIM.Shared.Utilities;",
                 "",
                 "namespace Models",
                 "{",
                 "    [Serializable]",
                 "    public class Script : Model",
                 "    {",
-                "        [Link] private Clock Clock;",
-                "        [Link] private Fertiliser Fertiliser;",
-                "        [Link] private Summary Summary;",
-                "        [Link] private Soil Soil;",
-                "        private Accumulator accumulatedRain;",
-                "        [Link]",
-                "        private ISoilWater waterBalance;",
+                "        [Link] Clock Clock;",
+                "        [Link] Fertiliser Fertiliser;",
+                "        [Link] Summary Summary;",
+                "        [Link] Soil Soil;",
                 "        ",
                 "        [Description(\"Crop\")]",
                 "        public IPlant Crop { get; set; }",
                 "",
-                "        [Description(\"Start of sowing window (d-mmm)\")]",
-                "        public string StartDate { get; set; }",
-                "",
-                "        [Description(\"End of sowing window (d-mmm)\")]",
-                "        public string EndDate { get; set; }",
-                "",
-                "        [Description(\"Minimum extractable soil water for sowing (mm)\")]",
-                "        public double MinESW { get; set; }",
-                "",
-                "        [Description(\"Accumulated rainfall required for sowing (mm)\")]",
-                "        public double MinRain { get; set; }",
-                "",
-                "        [Description(\"Duration of rainfall accumulation (d)\")]",
-                "        public int RainDays { get; set; }",
+                "        [Description(\"PlantingDate (d-MMM-yyyy)\")]",
+                "        public DateTime PlantingDate { get; set; }",
                 "",
                 "        [Display(Type = DisplayType.CultivarName)]",
                 "        [Description(\"Cultivar to be sown\")]",
                 "        public string CultivarName { get; set; }",
                 "",
-                "        [Description(\"Sowing depth (mm)\")]",
-                "        public double SowingDepth { get; set; }",
+                "        [Description(\"Planting depth (mm)\")]",
+                "        public double PlantingDepth { get; set; }",
                 "",
                 "        [Description(\"Row spacing (mm)\")]",
                 "        public double RowSpacing { get; set; }",
                 "",
                 "        [Description(\"Plant population (/m2)\")]",
                 "        public double Population { get; set; }",
-                "        ",
-                "        ",
-                "        [EventSubscribe(\"StartOfSimulation\")]",
-                "        private void OnSimulationCommencing(object sender, EventArgs e)",
-                "        {",
-                "            accumulatedRain = new Accumulator(this, \"[Weather].Rain\", RainDays);",
-                "        }",
                 "",
                 "        [EventSubscribe(\"DoManagement\")]",
                 "        private void OnDoManagement(object sender, EventArgs e)",
                 "        {",
-                "            accumulatedRain.Update();",
-                "            ",
-                "            if (DateUtilities.WithinDates(StartDate, Clock.Today, EndDate) &&",
-                "                !Crop.IsAlive &&",
-                "                MathUtilities.Sum(waterBalance.ESW) > MinESW &&",
-                "                accumulatedRain.Sum > MinRain)",
+                "            // Assuming that the simulation expects sowing to occur exactly on the specified date.",
+                "            // Here, DateUtilities.WithinDates compares the sow date to today's date.",
+                "            if (DateUtilities.WithinDates(PlantingDate, Clock.Today, PlantingDate))",
                 "            {",
-                "                Crop.Sow(population: Population, cultivar: CultivarName, depth: SowingDepth, rowSpacing: RowSpacing);    ",
+                "                Crop.Sow(population: Population, cultivar: CultivarName, depth: PlantingDepth, rowSpacing: RowSpacing);    ",
                 "            }",
                 "        }",
                 "    }",
-                "}"
+                "}",
+                ""
               ],
               "Parameters": [
                 {
@@ -808,43 +782,27 @@
                   "Value": "[Wheat]"
                 },
                 {
-                  "Key": "StartDate",
-                  "Value": "1-may"
-                },
-                {
-                  "Key": "EndDate",
-                  "Value": "10-jul"
-                },
-                {
-                  "Key": "MinESW",
-                  "Value": "100"
-                },
-                {
-                  "Key": "MinRain",
-                  "Value": "25"
-                },
-                {
-                  "Key": "RainDays",
-                  "Value": "7"
+                  "Key": "PlantingDate",
+                  "Value": "10/15/2024 00:00:00"
                 },
                 {
                   "Key": "CultivarName",
                   "Value": "Hartog"
                 },
                 {
-                  "Key": "SowingDepth",
-                  "Value": "30"
+                  "Key": "PlantingDepth",
+                  "Value": "0"
                 },
                 {
                   "Key": "RowSpacing",
-                  "Value": "250"
+                  "Value": "750"
                 },
                 {
                   "Key": "Population",
-                  "Value": "120"
+                  "Value": "6"
                 }
               ],
-              "Name": "Sow using a variable rule",
+              "Name": "Sow",
               "ResourceName": null,
               "Children": [],
               "Enabled": true,
@@ -1083,11 +1041,11 @@
                 },
                 {
                   "Key": "weeks",
-                  "Value": "0"
+                  "Value": "1"
                 },
                 {
                   "Key": "afterSowing",
-                  "Value": "2"
+                  "Value": "1"
                 }
               ],
               "Name": "Automatic irrigation based on water deficit",
@@ -1174,9 +1132,7 @@
                 "                {",
                 "                    Summary.WriteMessage(this, $\"BEFORE VALUE: {waterBalance.SWmm[layer]}\",MessageType.Diagnostic);",
                 "                    waterBalance.SWmm[layer] = sw;  // Update current soil water",
-                "                    Summary.WriteMessage(this, ",
-                "                        $\"Updated layer {layer} SW to {sw} on {today:yyyy-MM-dd}\", ",
-                "                        MessageType.Diagnostic);",
+                "                    Summary.WriteMessage(this, $\"AFTER VALUE: {waterBalance.SWmm[layer]}\",MessageType.Diagnostic);",
                 "                }",
                 "            }",
                 "        }",
@@ -1186,7 +1142,7 @@
               "Parameters": [
                 {
                   "Key": "FilePath",
-                  "Value": "APSIM_FILES/Wheat_soil_moisture_data.txt"
+                  "Value": ""
                 }
               ],
               "Name": "SoilWaterUpdate",
@@ -1249,7 +1205,7 @@
               "LineThickness": 0,
               "TableName": "Report",
               "XFieldName": "Clock.Today",
-              "YFieldName": "Yield_per_square_meter",
+              "YFieldName": "yield_per_square_meter",
               "X2FieldName": null,
               "Y2FieldName": null,
               "ShowInLegend": false,

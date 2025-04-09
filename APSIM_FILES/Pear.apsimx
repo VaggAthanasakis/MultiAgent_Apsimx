@@ -685,8 +685,8 @@
           "ConstantsFile": "/home/eathanasakis/Intership/MultiAgent_Apsimx/APSIM_FILES/Heraklion.ini",
           "FileName": "Heraklion.csv",
           "ExcelWorkSheetName": "",
-          "Latitude": 39.3614,
-          "Tav": 0.9720588235294119,
+          "Latitude": 0.0,
+          "Tav": 0.0,
           "Amp": 0.0,
           "Name": "Weather",
           "ResourceName": null,
@@ -11114,28 +11114,28 @@
                   ],
                   "TextureMetadata": null,
                   "ParticleSizeSandMetadata": [
-                    "Calculated",
-                    "Calculated",
-                    "Calculated",
-                    "Calculated",
-                    "Calculated",
-                    "Calculated"
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
                   ],
                   "ParticleSizeSiltMetadata": [
-                    "Calculated",
-                    "Calculated",
-                    "Calculated",
-                    "Calculated",
-                    "Calculated",
-                    "Calculated"
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
                   ],
                   "ParticleSizeClayMetadata": [
-                    "Calculated",
-                    "Calculated",
-                    "Calculated",
-                    "Calculated",
-                    "Calculated",
-                    "Calculated"
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
                   ],
                   "Name": "Physical",
                   "ResourceName": null,
@@ -11465,12 +11465,12 @@
                 {
                   "$type": "Models.Soils.Water, Models",
                   "Thickness": [
-                    200.0,
-                    250.0,
-                    300.0,
+                    100.0,
+                    100.0,
+                    100.0,
                     150.0,
                     150.0,
-                    1950.0
+                    300.0
                   ],
                   "InitialValues": [
                     0.35,
@@ -11480,7 +11480,7 @@
                     0.28,
                     0.1
                   ],
-                  "InitialPAWmm": 69.0,
+                  "InitialPAWmm": 82.5,
                   "RelativeTo": "LL15",
                   "FilledFromTop": true,
                   "Name": "Water",
