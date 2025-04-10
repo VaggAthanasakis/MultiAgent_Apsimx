@@ -124,7 +124,6 @@ class OpenMeteoWeatherDownloader:
 
 
         for i in range(len(urls)):
-            #print(i)
             # Request weather data (assuming the API returns a list of responses)
             responses = self.openmeteo.weather_api(urls[i], params=params[i])
             response = responses[0]  # Process first location. Use a loop if needed.
@@ -242,19 +241,31 @@ class OpenMeteoWeatherDownloader:
 
         #return final_df
         # Return the total amount of rain
-        return final_df['rain'].sum()
+        # Filter the DataFrame to include only rows from the current date to the end date
+        current_date = datetime.today().date()
+        filtered_df = final_df.copy()
+        filtered_df['date'] = pd.to_datetime(filtered_df['year'], format='%Y') + pd.to_timedelta(filtered_df['day'] - 1, unit='D')
+        filtered_df = filtered_df[(filtered_df['date'] >= pd.Timestamp(current_date)) & (filtered_df['date'] <= pd.Timestamp(end_date))]
+        
+        # Extract year, month, day, and rain columns
+        filtered_df['month'] = filtered_df['date'].dt.month
+        filtered_df['day'] = filtered_df['date'].dt.day
+        result_df = filtered_df[['year', 'month', 'day', 'rain']]
+
+        #print(result_df.to_string(index=False))
+        return final_df['rain'].sum(), result_df.to_string(index=False)
 
 
 # If you want to test the class directly, you can add the following:
 if __name__ == "__main__":
     downloader = OpenMeteoWeatherDownloader(
-        location="Heraklion",
+        location="Tylisos",
         latitude=35.341846,
         longitude=25.148254,
-        start_date="2025-03-10",
-        end_date="2025-03-30",
-        csv_filename="Heraklion.csv",
-        ini_filename="Heraklion.ini"
+        start_date="2025-03-01",
+        end_date="2025-04-15",
+        csv_filename="Tylisos.csv",
+        ini_filename="Tylisos.ini"
     )
     downloader.fetch_and_process()
     

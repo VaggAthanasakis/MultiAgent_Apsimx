@@ -55,9 +55,15 @@ def data_extraction_tool(crop: str):
 
     # keep only the date and the amount of waterApplied
     df = df[['Clock.Today', 'waterApplied']]
-
+    
     # remove the time from the date
     df['Clock.Today'] = pd.to_datetime(df['Clock.Today']).dt.date
+
+    # keep in a new dataphrame the rows that have a date greater than or equal to the current date
+    current_date = datetime.now().date()
+    df_curr_till_end = df[df['Clock.Today'] >= current_date]
+
+    #print(f"\nDataFrame:\n{df_curr_till_end.to_string(index=False)}")
 
     total_water_applied = df['waterApplied'].sum()
     
@@ -66,6 +72,6 @@ def data_extraction_tool(crop: str):
 
     #logger.info(f"Total Water Applied: {total_water_applied}")
     print(f"\nTotal Water Applied: {total_water_applied}")
-    return total_water_applied
+    return total_water_applied, df_curr_till_end.to_string(index=False)
 
 data_extraction_tool("wheat")

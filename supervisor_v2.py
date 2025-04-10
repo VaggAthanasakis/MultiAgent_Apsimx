@@ -106,7 +106,9 @@ def weather_data_retrieve_tool():
     Returns the weather file that is used to the apsim tool.
 
     Returns:
-        total_rain: the total amount of rain for that period
+        total_rain: the total amount of rain for the whole simulation period
+        data_phrame: the data frame that contains the rain amount for the next 7 days.
+                     Has the format: year, month, day, rain
     """
         #logger.info("Inside Weather Tool")
     print("\nInside Weather Tool")
@@ -126,6 +128,7 @@ def weather_data_retrieve_tool():
     longitude = data_json.get("longitude")
 
     planting_date = data_json.get("planting_date")
+
     end_date = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d") 
     print(f"start: {planting_date}, end: {end_date}")
 
@@ -142,15 +145,16 @@ def weather_data_retrieve_tool():
                                       end_date=end_date,
                                       csv_filename=csv_file_path,
                                       ini_filename=ini_file_path)
-    total_rain = retriever.fetch_and_process()
+    total_rain, data_phrame = retriever.fetch_and_process()
     print(f"Total Rain: {total_rain}")
+    print(f"Data Frame: {data_phrame}")
 
     # Ensure that the weather files have been created before returnig
     while not (os.path.exists(csv_file_path) and os.path.exists(ini_file_path)):
         #logger.info("Sleeping")
         time.sleep(0.1)
 
-    return total_rain
+    return total_rain, data_phrame
 
 
 @tool
@@ -222,6 +226,8 @@ def data_extraction_tool(crop: str):
 
     Returns:
         total_water_applied: The total amount of water applied
+        df_curr_till_end: The data frame that contains the water applied for the next 7 days.
+                          Has the format: date, waterApplied
     """
 
     # Path to your .db file
@@ -246,6 +252,10 @@ def data_extraction_tool(crop: str):
     # remove the time from the date
     df['Clock.Today'] = pd.to_datetime(df['Clock.Today']).dt.date
 
+    # keep in a new dataphrame the rows that have a date greater than or equal to the current date
+    current_date = datetime.now().date()
+    df_curr_till_end = df[df['Clock.Today'] >= current_date]
+
     total_water_applied = df['waterApplied'].sum()
     
     # Close the connection
@@ -253,7 +263,7 @@ def data_extraction_tool(crop: str):
 
     #logger.info(f"Total Water Applied: {total_water_applied}")
     print(f"\nTotal Water Applied: {total_water_applied}")
-    return total_water_applied
+    return total_water_applied, df_curr_till_end.to_string(index=False)
 
 
 @tool
@@ -666,11 +676,16 @@ crop_simulator_agent = create_react_agent(
     Clay: z %
 
     Weather Forecast 
-    Total Expected Rainfall: 0.2 mm
-
+    Expected Rainfall for the next 7 days: 2024-4-3 20mm
+                                           2024-4-4 20mm
+                                           2024-4-5 20mm
+                                           2024-4-6 20mm
     Soil Moisture (Upper Layer): 60 mm
 
-    Irrigation Applied in the simulation: 12 mm
+    Irrigation Applied in the simulation for the next 7 days: 2024-4-3 20mm
+                                                              2024-4-4 20mm
+                                                              2024-4-5 20mm
+                                                              2024-4-6 20mm
 
     → Usable water in the root zone is below optimal.
 
@@ -703,14 +718,24 @@ greek_translator_agent = create_react_agent(
     Άργιλος: z%
 
     Πρόγνωση Καιρού:
-    Συνολική Αναμενόμενη Βροχόπτωση: 0.2 mm
+    Συνολική Αναμενόμενη Βροχόπτωση Για Τις Επόμενες 7 Ημέρες:  2024-4-3 20mm
+                                                                2024-4-4 20mm
+                                                                2024-4-5 20mm
+                                                                2024-4-6 20mm
+                                                                      .
+                                                                      .
     Υγρασία Εδάφους (Άνω Στρώμα): 60 mm
 
-    Άρδευση που εφαρμόστηκε στην προσομοίωση: 12 mm
-    → Το διαθέσιμο νερό στη ρίζα είναι κάτω από το βέλτιστο.
+    Άρδευση που εφαρμόστηκε στην προσομοίωση για τις επόμενες 7 ημέρες: 2024-4-3 20mm
+                                                                        2024-4-4 20mm
+                                                                        2024-4-5 20mm
+                                                                        2024-4-6 20mm
+                                                                              .
+                                                                              .                                                                      
+    → Το διαθέσιμο νερό στη ρίζα είναι κάτω από το βέλτιστο. 
 
     Συνιστώμενη Εφαρμογή Νερού:
-    Εφαρμόστε 40 mm αρδευτικού νερού τις επόμενες ημέρες.
+    Εφαρμόστε 80 mm αρδευτικού νερού τις επόμενες ημέρες σύμφωνα με τα αποτελέσματα τις προσομοίωσης.
 
 """
 )
