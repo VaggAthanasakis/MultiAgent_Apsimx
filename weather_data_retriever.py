@@ -235,7 +235,10 @@ class OpenMeteoWeatherDownloader:
 
         # Write location constants to an INI file
         with open(self.ini_filename, "w") as file:
-            file.write(f"location = {self.location}\n")
+            if(self.location is not None):
+                file.write(f"location = {self.location}\n")
+            else:
+                file.write(f"location = Unknown\n")
             file.write(f"latitude = {self.latitude}\n")
             file.write(f"longitude = {self.longitude}\n")
 
@@ -251,6 +254,7 @@ class OpenMeteoWeatherDownloader:
         filtered_df['month'] = filtered_df['date'].dt.month
         filtered_df['day'] = filtered_df['date'].dt.day
         result_df = filtered_df[['year', 'month', 'day', 'rain']]
+        # print(f"\nFiltered DataFrame:\n{result_df.to_string(index=False)}")
 
         #print(result_df.to_string(index=False))
         return final_df['rain'].sum(), result_df.to_string(index=False)
@@ -262,8 +266,8 @@ if __name__ == "__main__":
         location="Tylisos",
         latitude=35.341846,
         longitude=25.148254,
-        start_date="2025-03-01",
-        end_date="2025-04-15",
+        start_date="2024-11-19",
+        end_date="2025-04-17",
         csv_filename="Tylisos.csv",
         ini_filename="Tylisos.ini"
     )

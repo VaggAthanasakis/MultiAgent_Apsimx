@@ -25,53 +25,42 @@ import json
 from pathlib import Path
 
 
-def data_extraction_tool(crop: str):
+def get_api_data_tool(field_id: int):
     """
-    This tool is responsible for extracting data given a .db file.
-    Can extract data like total water applied.
+    This tool is used in order to retrieve data from an api endpoint.
+    Retrieves data like: Field parameters (pH, NH4,...), Field location,
+    type of crop, growth type, ...
 
     Args:
-        crop: the crop that the simulation performed to. For example could be 'pear', 'olive', 'wheat', 'potato', 'corn', 'barley' etc.
-
+        field_id: the id of the Field that the cultivation is taking place
     Returns:
-        total_water_applied: The total amount of water applied
+        crop: the crop name 
+        growth_type:  perennial or annual
+        sand: the sand percentage of the Soil Texture
+        silt: the silt percentage of the Soil Texture
+        clay: the clay percentage of the Soil Texture
     """
-
-    # Path to your .db file
-    #logger.info("Inside Data Extraction Tool")
-    print("\nInside Data Extraction Tool")
-    print(f"\nEXTRACTION CROP: {crop}")
-
-    crop = crop.capitalize()
-    db_path = "/home/eathanasakis/Intership/MultiAgent_Apsimx/APSIM_FILES/Wheat.db"
-    # Connect to the database
-    conn = sqlite3.connect(db_path)
-
-    # Specify the table you want to read
-    table_name = "Report"
-
-    # Read the table into a Pandas DataFrame
-    df = pd.read_sql_query(f"SELECT * FROM {table_name}", conn)
-
-    # keep only the date and the amount of waterApplied
-    df = df[['Clock.Today', 'waterApplied']]
+    #logger.info("Inside API Tool")
+    print("\nInside API Tool")
+    # The file where the data will be stored
+    full_json_data = "full_json_data.json"
+    clean_json_data = "clean_json_data.json"
     
-    # remove the time from the date
-    df['Clock.Today'] = pd.to_datetime(df['Clock.Today']).dt.date
 
-    # keep in a new dataphrame the rows that have a date greater than or equal to the current date
-    current_date = datetime.now().date()
-    df_curr_till_end = df[df['Clock.Today'] >= current_date]
+    url = f"https://api.aigrow.gr/api/v1/se/seasons_operations/{str(field_id)}/"
+    headers = {
+        "X-API-Key": "N6mzKHWL1ycWygQn1WsnJs0vrTs0gYKq_x_K9pC0Fr8"
+    }
 
-    #print(f"\nDataFrame:\n{df_curr_till_end.to_string(index=False)}")
-
-    total_water_applied = df['waterApplied'].sum()
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()  # Raise an error for bad status codes (4xx, 5xx)
+        data = response.json()
+        with open(full_json_data, "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=4, ensure_ascii=False)
+        print(f"Data saved to {full_json_data}")
     
-    # Close the connection
-    conn.close()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching data: {e}")
 
-    #logger.info(f"Total Water Applied: {total_water_applied}")
-    print(f"\nTotal Water Applied: {total_water_applied}")
-    return total_water_applied, df_curr_till_end.to_string(index=False)
-
-data_extraction_tool("wheat")
+get_api_data_tool(62)

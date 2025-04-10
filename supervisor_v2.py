@@ -107,8 +107,8 @@ def weather_data_retrieve_tool():
 
     Returns:
         total_rain: the total amount of rain for the whole simulation period
-        data_phrame: the data frame that contains the rain amount for the next 7 days.
-                     Has the format: year, month, day, rain
+        next_seven_days_rain: contains the rain amount for the next 7 days.
+                              Has the format: year, month, day, rain
     """
         #logger.info("Inside Weather Tool")
     print("\nInside Weather Tool")
@@ -123,9 +123,13 @@ def weather_data_retrieve_tool():
 
 
     # get the information that is necessary 
-    location = data_json.get("location")
+    location = data_json.get("location") if data_json.get("location") is not None else "Unknown"
     latitude = data_json.get("latitude")
     longitude = data_json.get("longitude")
+
+    # get the season_id
+    season_id = data_json.get("season_id")
+    print(season_id)
 
     planting_date = data_json.get("planting_date")
 
@@ -134,9 +138,13 @@ def weather_data_retrieve_tool():
 
 
     # file Paths for the weather files
-    csv_file_path = config["Paths"]["weather_csv"].replace("{location}",location)
-    ini_file_path = config["Paths"]["weather_ini"].replace("{location}",location)
+    # csv_file_path = config["Paths"]["weather_csv"].replace("{location}",location)
+    # ini_file_path = config["Paths"]["weather_ini"].replace("{location}",location)
 
+    csv_file_path = config["Paths"]["weather_csv"].replace("{season_id}",str(season_id))
+    ini_file_path = config["Paths"]["weather_ini"].replace("{season_id}",str(season_id))
+
+    print(location)
 
     retriever = openMeteoDataRetriever(location=location,
                                       latitude=latitude,
@@ -145,16 +153,16 @@ def weather_data_retrieve_tool():
                                       end_date=end_date,
                                       csv_filename=csv_file_path,
                                       ini_filename=ini_file_path)
-    total_rain, data_phrame = retriever.fetch_and_process()
+    total_rain, next_seven_days_rain = retriever.fetch_and_process()
     print(f"Total Rain: {total_rain}")
-    print(f"Data Frame: {data_phrame}")
+    print(f"next_seven_days_rain: {next_seven_days_rain}")
 
     # Ensure that the weather files have been created before returnig
     while not (os.path.exists(csv_file_path) and os.path.exists(ini_file_path)):
         #logger.info("Sleeping")
         time.sleep(0.1)
 
-    return total_rain, data_phrame
+    return total_rain, next_seven_days_rain
 
 
 @tool
@@ -265,7 +273,6 @@ def data_extraction_tool(crop: str):
     print(f"\nTotal Water Applied: {total_water_applied}")
     return total_water_applied, df_curr_till_end.to_string(index=False)
 
-
 @tool
 def get_api_data_tool(field_id: int):
     """
@@ -305,19 +312,6 @@ def get_api_data_tool(field_id: int):
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data: {e}")
     
-    # soil_analysis = {}
-    # for value in data["farmland"]["latest_soilanalysis"]["soilanalysis_values"]:
-        
-    #     prop_name = value["soilanalysis_property"]["name"].strip()  # Normalize names
-        
-    #     try:
-    #         # Convert values to float (if possible)
-    #         soil_analysis[prop_name] = float(value["value"])
-    #     except (ValueError, TypeError):
-    #         # Keep as string if conversion fails
-    #         soil_analysis[prop_name] = value["value"]
-
-
     # get soil Analysis values
     soil_analysis = {}
     try:
@@ -361,12 +355,9 @@ def get_api_data_tool(field_id: int):
 
     planting_date = data.get("start_date") # may need to be data.get("sowing_date")
 
-
-
-
-
     extracted_data = {
         # get() without default returns None if keys are missing
+        "season_id": "id_"+ str(data.get("season_id")),
         "crop_type": crop,
         "growth_type": growth_type,
         "longitude": longitude,
@@ -376,22 +367,22 @@ def get_api_data_tool(field_id: int):
         "Sand": sand,
         "Silt": silt,
         "pH": soil_analysis.get("ph") if soil_analysis.get("ph") is not None else 7.5,
-        "BD": 1.16,                  ## We have to take the below values from the api
-        "LL15": 0.28,
-        "DUL": 0.36,
-        "SAT": 0.56,
-        "LL": 0.28,
-        "ESP": 0.25,
-        "CEC": 49.67,
-        "EC": 0.304,
-        "NO3": [3.1, 2.55],
-        "Carbon": 4.53,
-        "SoilCNRatio": 7.44,
-        "InitialCNR": 7.44,
-        "location": "Heraklion",
+        "BD": soil_analysis.get("BD") if soil_analysis.get("BD") is not None else 1.16,                  ## We have to take the below values from the api
+        "LL15": soil_analysis.get("LL15") if soil_analysis.get("LL15") is not None else 0.28,
+        "DUL": soil_analysis.get("DUL") if soil_analysis.get("DUL") is not None else 0.36,
+        "SAT": soil_analysis.get("SAT") if soil_analysis.get("SAT") is not None else 0.56,
+        "LL": soil_analysis.get("LL") if soil_analysis.get("LL") is not None else 0.28,
+        "ESP": soil_analysis.get("ESP") if soil_analysis.get("ESP") is not None else 0.25,
+        "CEC": soil_analysis.get("CEC") if soil_analysis.get("CEC") is not None else 49.67,
+        "EC": soil_analysis.get("EC") if soil_analysis.get("EC") is not None else 0.304,
+        "NO3": soil_analysis.get("NO3") if  soil_analysis.get("NO3") is not None else [3.1, 2.55],
+        "Carbon": soil_analysis.get("Carbon") if soil_analysis.get("Carbon") is not None else 4.53,
+        "SoilCNRatio": soil_analysis.get("SoilCNRatio") if soil_analysis.get("SoilCNRatio") is not None else 7.44,
+        "InitialCNR": soil_analysis.get("InitialCNR") if soil_analysis.get("InitialCNR") is not None else 7.44,
+        "location": soil_analysis.get("location"), #if soil_analysis.get("location") is not None else "Heraklion",
         "planting_date": planting_date,
-        "row_space": 770,
-        "planting_depth": 150,
+        "row_space": soil_analysis.get("row_space") if soil_analysis.get("row_space") is not None else 770,
+        "planting_depth": soil_analysis.get("planting_depth") if soil_analysis.get("planting_depth") is not None else 150,
     }
 
     # Check if we have a annual or a perennial crop
@@ -438,6 +429,7 @@ def command_file_format(planting_date: str, end_date: str):
         data_json = json.load(file)
 
     # planting_date = data_json.get("planting_date")
+    season_id = data_json.get("season_id")
     location = data_json.get("location")
     latitude = data_json.get("latitude")
     longitude = data_json.get("longitude")
@@ -467,8 +459,8 @@ def command_file_format(planting_date: str, end_date: str):
     planting_depth = data_json.get("planting_depth")
     row_space = data_json.get("row_space")
 
-    weather_csv = location + ".csv"
-    weather_ini = location + ".ini"
+    weather_csv = str(season_id) + ".csv"
+    weather_ini = str(season_id) + ".ini"
 
     # ApsimX validation Checks
     SAT_max = (1 - (BD/2.65))
@@ -497,6 +489,7 @@ def command_file_format(planting_date: str, end_date: str):
         "[NO3].InitialValues[1:2]": ", ".join(map(str,NO3)),
         "[Organic].Carbon[1:2]": carbon,
         "[Organic].SoilCNRatio[1:6]":cn_ratio,
+        "[SurfaceOrganicMatter].InitialCNR[1:6]": cn_ratio,
         "[SoilWaterUpdate].Script.FilePath": config["Paths"]["soil_moisture_data"].replace("{crop}", crop)
 
     }
@@ -579,7 +572,6 @@ def command_file_format(planting_date: str, end_date: str):
 
     return "Command File Formatted"
 
-
 # Create a Supervisor Agent
 members = ["crop_simulator","greek_translator"]
 
@@ -592,9 +584,7 @@ class Router(TypedDict):
     """Worker to route to next. If no workers needed, route to FINISH."""
     next: Literal[*options] # type: ignore
 
-
-#llm = ChatOllama(model="llama3.3:latest", temperature = 0)
-# llm = ChatOllama(model="llama3.1:8b", temperature = 0)
+# define the models
 llm = ChatOllama(model="qwen2.5:72b", temperature = 0)
 greek_llm = ChatOllama(model="MHKetbi/ilsp-Llama-Krikri-8B-Instruct", temperature = 0)
 
@@ -650,7 +640,7 @@ crop_simulator_agent = create_react_agent(
     Use ONE tool per response. Format: {"name": "<tool_name>", "parameters": {}}.
     The order of the tool execution MUST BE:
         1) get_api_data_tool: this tool is used in order to retrieve data  from an api endpoint (like sand(%), silt(%), clay(%)).
-        2) weather_data_retrieve_tool: this tool is used in order to retrieve the weather data
+        2) weather_data_retrieve_tool: this tool is used in order to retrieve the weather data (Has data for the next 7 days)
         3) get_sensor_data_tool: this tool is used in order to retrieve the soil humidity data (per layer of soil) from the field.
         4) apsim_tool: this tool is used in order to perform the crop simulation.
         5) data_extraction_tool: this tool is used in order to extract data from the simulation (like total water applied).
@@ -666,15 +656,13 @@ crop_simulator_agent = create_react_agent(
     -> The response must be easily understandable by a farmer.
     -> Do not include polite closing remarks or encouragements to ask more questions. End responses directly with the relevant information.
 
+    Note: you have to include to your response: 1) Rainfall of the next 7 days, 2) Soil Moisture data (from get_sensor_data_tool), 3) Irrigation applied in the simulation
     Example output format:
     'Irrigation Advisory Report
 
     Crop: Wheat
-    Soil Texture:
-    Sand: x %
-    Silt: y %
-    Clay: z %
 
+    Total Water Applied From The Start Of the Simulation: 140 mm
     Weather Forecast 
     Expected Rainfall for the next 7 days: 2024-4-3 20mm
                                            2024-4-4 20mm
@@ -686,8 +674,6 @@ crop_simulator_agent = create_react_agent(
                                                               2024-4-4 20mm
                                                               2024-4-5 20mm
                                                               2024-4-6 20mm
-
-    → Usable water in the root zone is below optimal.
 
     Recommended Water Application:
 
@@ -712,11 +698,7 @@ greek_translator_agent = create_react_agent(
     Example output format: (Example Values, Do not use them)
     'Αναφορά Άρδευσης'
     Καλλιέργεια: Σιτάρι
-    Σύνθεση Εδάφους:
-    Άμμος: x%
-    Ίλυς: y%
-    Άργιλος: z%
-
+    
     Πρόγνωση Καιρού:
     Συνολική Αναμενόμενη Βροχόπτωση Για Τις Επόμενες 7 Ημέρες:  2024-4-3 20mm
                                                                 2024-4-4 20mm

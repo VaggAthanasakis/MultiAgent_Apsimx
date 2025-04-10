@@ -2,8 +2,8 @@ load Wheat.apsimx
 
 [Clock].Start = 2024-11-19
 [Clock].End = 2025-04-17
-[Weather].FileName = Heraklion.csv
-[Weather].ConstantsFile = Heraklion.ini
+[Weather].FileName = id_62.csv
+[Weather].ConstantsFile = id_62.ini
 
 [Soil].Latitude = 39.3614
 [Soil].Longitude = 22.093
