@@ -1,7 +1,7 @@
 load Wheat.apsimx
 
-[Clock].Start = 2024-10-10
-[Clock].End = 2025-10-10
+[Clock].Start = 2024-11-19
+[Clock].End = 2025-04-17
 [Weather].FileName = Heraklion.csv
 [Weather].ConstantsFile = Heraklion.ini
 
@@ -31,7 +31,7 @@ load Wheat.apsimx
 [SurfaceOrganicMatter].InitialCNR = 7.44
 
 [SoilWaterUpdate].Script.FilePath = APSIM_FILES/Wheat_soil_moisture_data.txt
-[Sow].Script.PlantingDate = 10/15/2024
+[Sow].Script.PlantingDate = 2024-11-19
 [Sow].Script.PlantingDepth = 150
 [Sow].Script.RowSpacing = 770
 

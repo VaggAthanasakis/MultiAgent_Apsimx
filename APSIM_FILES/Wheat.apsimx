@@ -12,8 +12,8 @@
       "Children": [
         {
           "$type": "Models.Clock, Models",
-          "Start": "2024-10-10T00:00:00",
-          "End": "2025-04-15T00:00:00",
+          "Start": "2024-11-19T00:00:00",
+          "End": "2025-04-17T00:00:00",
           "Name": "Clock",
           "ResourceName": null,
           "Children": [],
@@ -35,8 +35,8 @@
           "FileName": "Heraklion.csv",
           "ExcelWorkSheetName": "",
           "Latitude": 39.3614,
-          "Tav": 3.071450888179152,
-          "Amp": 8.360505896245062,
+          "Tav": 2.2251669000933707,
+          "Amp": 3.15468137254902,
           "Name": "Weather",
           "ResourceName": null,
           "Children": [],
@@ -160,30 +160,30 @@
                     300.0
                   ],
                   "ParticleSizeSand": [
-                    20.0,
-                    20.0,
-                    20.0,
-                    20.0,
-                    20.0,
-                    20.0,
+                    35.0,
+                    35.0,
+                    35.0,
+                    35.0,
+                    35.0,
+                    35.0,
                     5.0
                   ],
                   "ParticleSizeSilt": [
-                    70.0,
-                    70.0,
-                    70.0,
-                    70.0,
-                    70.0,
-                    70.0,
+                    30.0,
+                    30.0,
+                    30.0,
+                    30.0,
+                    30.0,
+                    30.0,
                     65.0
                   ],
                   "ParticleSizeClay": [
-                    10.0,
-                    10.0,
-                    10.0,
-                    10.0,
-                    10.0,
-                    10.0,
+                    35.0,
+                    35.0,
+                    35.0,
+                    35.0,
+                    35.0,
+                    35.0,
                     30.0
                   ],
                   "Rocks": [
@@ -482,12 +482,12 @@
                     300.0
                   ],
                   "PH": [
-                    7.0,
-                    7.0,
-                    7.0,
-                    7.0,
-                    7.0,
-                    7.0,
+                    7.5,
+                    7.5,
+                    7.5,
+                    7.5,
+                    7.5,
+                    7.5,
                     8.0
                   ],
                   "PHUnits": 0,
@@ -783,7 +783,7 @@
                 },
                 {
                   "Key": "PlantingDate",
-                  "Value": "10/15/2024 00:00:00"
+                  "Value": "11/19/2024 00:00:00"
                 },
                 {
                   "Key": "CultivarName",
@@ -791,11 +791,11 @@
                 },
                 {
                   "Key": "PlantingDepth",
-                  "Value": "0"
+                  "Value": "150"
                 },
                 {
                   "Key": "RowSpacing",
-                  "Value": "750"
+                  "Value": "770"
                 },
                 {
                   "Key": "Population",
@@ -1142,7 +1142,7 @@
               "Parameters": [
                 {
                   "Key": "FilePath",
-                  "Value": ""
+                  "Value": "APSIM_FILES/Wheat_soil_moisture_data.txt"
                 }
               ],
               "Name": "SoilWaterUpdate",

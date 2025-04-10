@@ -13,7 +13,7 @@ from langgraph.prebuilt import create_react_agent
 from PIL import Image as PILImage
 from io import BytesIO
 import matplotlib.pyplot as plt
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 import os
 import re
 from weather_data_retriever import OpenMeteoWeatherDownloader as openMeteoDataRetriever
@@ -23,6 +23,7 @@ import configparser
 import requests
 import json
 from pathlib import Path
+
 
 
 # Ignore all warnings
@@ -52,7 +53,7 @@ def display_graph(graph):
 
 
 @tool
-def apsim_tool(start_date: str, end_date: str, crop_type: str):
+def apsim_tool(crop_type: str):
     """
     Creates a crop simulation about the development, the yield and the 
     irrigation demands of a spesific crop.
@@ -60,17 +61,25 @@ def apsim_tool(start_date: str, end_date: str, crop_type: str):
     Requires the output weather file of the tool weather_data_retrieve_tool in order to run.
 
     Args:
-        start_date: starting date of the period, FORMAT: YYYY-MM-DD.
-        end_date: ending date of the period, FORMAT: YYYY-MM-DD.
         crop_type: either 'perennial' or 'annual'
         
     """
+    print("\nInside Apsim Tool")
+    data_json_path = config["Paths"]["api_data_file"].replace("{json_name}", "clean_data")
+    
+    # Read the data from the api response file
+    with open(data_json_path, "r") as file:
+        data_json = json.load(file)
 
     # Command File Format moved here
-    command_file_format(start_date, end_date)
+    planting_date = data_json.get("planting_date")                       # start_date = planting_date
+    end_date = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d") # end_date = today + 7 days
+
+    print(f"start: {planting_date}, end: {end_date}")
+    command_file_format(planting_date, end_date)
     
     #logger.info("Inside Apsim Tool")
-    print("\nInside Apsim Tool")
+ 
 
     apsim_exe = config.get("Paths", "apsim_exe")
 
@@ -89,21 +98,19 @@ def apsim_tool(start_date: str, end_date: str, crop_type: str):
 
 
 @tool
-def weather_data_retrieve_tool(start_date: str, end_date: str):
+def weather_data_retrieve_tool():
     """"
     Retrieve the weather data for a specific location
-    in a specific period
+    in a specific period. 
+    Provided only with the end date of the period.
     Returns the weather file that is used to the apsim tool.
 
-    Args:
-        start_date: starting date of the period, FORMAT: YYYY-MM-DD
-        end_date: ending date of the period, FORMAT: YYYY-MM-DD
     Returns:
         total_rain: the total amount of rain for that period
     """
         #logger.info("Inside Weather Tool")
     print("\nInside Weather Tool")
-    print(f"start: {start_date}, end: {end_date}")
+
 
     # Retrieve all the data needed from the api response
     data_json_path = config["Paths"]["api_data_file"].replace("{json_name}", "clean_data")
@@ -112,11 +119,15 @@ def weather_data_retrieve_tool(start_date: str, end_date: str):
     with open(data_json_path, "r") as file:
         data_json = json.load(file)
 
+
     # get the information that is necessary 
     location = data_json.get("location")
     latitude = data_json.get("latitude")
     longitude = data_json.get("longitude")
 
+    planting_date = data_json.get("planting_date")
+    end_date = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d") 
+    print(f"start: {planting_date}, end: {end_date}")
 
 
     # file Paths for the weather files
@@ -127,7 +138,7 @@ def weather_data_retrieve_tool(start_date: str, end_date: str):
     retriever = openMeteoDataRetriever(location=location,
                                       latitude=latitude,
                                       longitude=longitude,
-                                      start_date=start_date,
+                                      start_date=planting_date,
                                       end_date=end_date,
                                       csv_filename=csv_file_path,
                                       ini_filename=ini_file_path)
@@ -155,20 +166,21 @@ def get_sensor_data_tool(crop: str):
     and the soil moisture is a float number.
     The date is the date of the simulation.
     The layer is the soil depth in cm.
-    The soil moisture is the soil moisture in mm
+    The soil moisture is in mm
     
     Args:
         crop: the crop that the simulation performed to. For example could be 'pear', 'olive', 'wheat', 'potato', 'corn', 'barley' etc.
         crop_type: returns the crop type 'annual' or 'perennial' 
     """
+    print("\nInside sensor_data_tool")
     crop = crop.capitalize()
     print(f"\nCROP: {crop}")
     #logger.info("Inside sensor_data_tool")
-    print("\nInside sensor_data_tool")
+
     sensor_data_file_path = config["Paths"]["soil_moisture_data"].replace("{crop}", crop)
     #print("\n",sensor_data_file_path)
-    # Default sensor data if none provided
 
+    # Default sensor data if none provided
     sensor_data = [
         ("2025-04-1", 0, 20),
         ("2025-04-2", 0, 20),
@@ -340,6 +352,9 @@ def get_api_data_tool(field_id: int):
     planting_date = data.get("start_date") # may need to be data.get("sowing_date")
 
 
+
+
+
     extracted_data = {
         # get() without default returns None if keys are missing
         "crop_type": crop,
@@ -365,6 +380,8 @@ def get_api_data_tool(field_id: int):
         "InitialCNR": 7.44,
         "location": "Heraklion",
         "planting_date": planting_date,
+        "row_space": 770,
+        "planting_depth": 150,
     }
 
     # Check if we have a annual or a perennial crop
@@ -386,37 +403,21 @@ def get_api_data_tool(field_id: int):
         json.dump(extracted_data, file, indent=4, ensure_ascii=False)
 
     output = {
-    "crop": crop,
-    "growth_type": growth_type,
-    "sand": sand,
-    "silt": silt,
-    "clay": clay
+        "crop": crop,
+        "growth_type": growth_type,
+        "sand": sand,
+        "silt": silt,
+        "clay": clay
     }
     return output
 
-@tool
-def get_time():
-    """
-    This tool is responsible for returning the current 
-    date in the format of yyyy-mm-dd
-
-    """
-    #logger.info("Inside get_time Tool")
-    print("\nInside get_time Tool")
-    current_date = datetime.now().strftime("%Y-%m-%d")
-    print(current_date)
-    return current_date
 
 # helpfull functions
-def command_file_format(start_date: str, end_date: str):
+def command_file_format(planting_date: str, end_date: str):
     """
     This function is used in order to modify the Command file.
     Modifies the Field Parameters for the simulation.
     MUST BE EXECUTED ONLY ONCE!!!
-    
-    Args:
-        start_date: starting date of the period, FORMAT: YYYY-MM-DD.
-        end_date: ending date of the period, FORMAT: YYYY-MM-DD.
         
     """
     #logger.info("Inside Command File Format")
@@ -426,6 +427,7 @@ def command_file_format(start_date: str, end_date: str):
     with open(data_json_path, "r") as file:
         data_json = json.load(file)
 
+    # planting_date = data_json.get("planting_date")
     location = data_json.get("location")
     latitude = data_json.get("latitude")
     longitude = data_json.get("longitude")
@@ -448,7 +450,12 @@ def command_file_format(start_date: str, end_date: str):
     cn_ratio = data_json.get("SoilCNRatio")
     start_age = data_json.get("Start_Age")
     crop = data_json.get("crop_type")
-    planting_date = data_json.get("planting_date")
+    # planting_date = data_json.get("planting_date")
+    # end_date = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d") 
+
+    # MUST GET THE VALUES FROM THE API
+    planting_depth = data_json.get("planting_depth")
+    row_space = data_json.get("row_space")
 
     weather_csv = location + ".csv"
     weather_ini = location + ".ini"
@@ -463,7 +470,7 @@ def command_file_format(start_date: str, end_date: str):
 
     updates = {
         "load": crop,
-        "[Clock].Start": start_date,
+        "[Clock].Start": planting_date,
         "[Clock].End": end_date,
         "[Weather].FileName": weather_csv,
         "[Weather].ConstantsFile": weather_ini,
@@ -501,7 +508,7 @@ def command_file_format(start_date: str, end_date: str):
             f"[{crop}Soil].LL[1:6]": LL,
             "[SlurpSoil].LL[1:6]": LL,
             "[TreeInitialisation].Script.StartAge": start_age,
-            "[TreeInitialisation].Script.SowingDate": start_date,
+            "[TreeInitialisation].Script.SowingDate": planting_date,
         })
     # Else we have an annual crop
     else:
@@ -514,8 +521,8 @@ def command_file_format(start_date: str, end_date: str):
             "[Soil].Chemical.EC[1:6]": EC,
             f"[{crop}Soil].LL[1:6]": LL,
             "[Sow].Script.PlantingDate": planting_date,
-            # "[Sow].Script.PlantingDepth": planting_depth,
-            # "[Sow].Script.RowSpacing": row_space,
+            "[Sow].Script.PlantingDepth": planting_depth,
+            "[Sow].Script.RowSpacing": row_space,
         })
     
     with open(commands_file, "r") as file:
@@ -564,9 +571,8 @@ def command_file_format(start_date: str, end_date: str):
 
 
 # Create a Supervisor Agent
-#members = ["crop_simulator","simulation_analysis","advisor"]
 members = ["crop_simulator","greek_translator"]
-#members = ["advisor"]
+
 # Our team supervisor is an LLM node. It just picks the next agent to process
 # and decides when the work is completed
 options = members + ["FINISH"]
@@ -626,7 +632,7 @@ def supervisor_node(state: State) -> Command[Literal[*members, "__end__"]]: # ty
 # Agents
 crop_simulator_agent = create_react_agent(
     llm,
-    tools=[get_api_data_tool, weather_data_retrieve_tool, get_sensor_data_tool, apsim_tool, get_time, data_extraction_tool],
+    tools=[get_api_data_tool, weather_data_retrieve_tool, get_sensor_data_tool, apsim_tool, data_extraction_tool],
     messages_modifier="""
     You are an AI assistant designed to help with Crop activities by performing crop simulations and give a response to the farmer
     after reasoning about the data. Your responses must be in English NOT IN GREEK, thats another's agent work.
@@ -634,12 +640,10 @@ crop_simulator_agent = create_react_agent(
     Use ONE tool per response. Format: {"name": "<tool_name>", "parameters": {}}.
     The order of the tool execution MUST BE:
         1) get_api_data_tool: this tool is used in order to retrieve data  from an api endpoint (like sand(%), silt(%), clay(%)).
-        2) weather_data_retrieve_tool: this tool is used in order to retrieve the weather data for a specific location
+        2) weather_data_retrieve_tool: this tool is used in order to retrieve the weather data
         3) get_sensor_data_tool: this tool is used in order to retrieve the soil humidity data (per layer of soil) from the field.
         4) apsim_tool: this tool is used in order to perform the crop simulation.
         5) data_extraction_tool: this tool is used in order to extract data from the simulation (like total water applied).
-    If you there is not starting or ending date, before the call of 'weather_data_retrieve_tool' use the tool get_time to get the current date and set this current
-    date as the starting date for the 'weather_data_retrieve_tool' and use as end date the current date +  days after that.
     Always call the tools with this order when you want to perform a simulation.
     Its important to keep all the values of the output of the get_api_data_tool (sand,silt,clay,crop,growth_type) in the state of the graph.
 
@@ -657,9 +661,9 @@ crop_simulator_agent = create_react_agent(
 
     Crop: Wheat
     Soil Texture:
-    Sand: x%
-    Silt: y%
-    Clay: z%
+    Sand: x %
+    Silt: y %
+    Clay: z %
 
     Weather Forecast 
     Total Expected Rainfall: 0.2 mm
@@ -786,7 +790,7 @@ def multiagent_Apsimx_Simulator(prompt: str):
 # """
 
 user_prompt = """
-    1) Create a crop simulation in the field with id = 62 for the period starting from 10-10-2024 until 10-10-2025.
+    1) Create a crop simulation in the field with id = 62.
     2) Analyse the Data of the simulation in order to output the total water that the simulation is recommends to apply.
     3) Give some advice for the crop to the farmer for the next days in greek.
 
